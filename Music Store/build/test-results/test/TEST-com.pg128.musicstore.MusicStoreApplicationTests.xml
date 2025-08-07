@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.pg128.musicstore.MusicStoreApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-08-07T18:58:36.381Z" hostname="cachyos-x8664" time="0.242">
+  <properties/>
+  <testcase name="contextLoads()" classname="com.pg128.musicstore.MusicStoreApplicationTests" time="0.242"/>
+  <system-out><![CDATA[00:28:33.743 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.pg128.musicstore.MusicStoreApplicationTests]: MusicStoreApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+00:28:33.802 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.pg128.musicstore.MusicStoreApplication for test class com.pg128.musicstore.MusicStoreApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.4)
+
+2025-08-08T00:28:34.036+05:30  INFO 98347 --- [Music Store] [    Test worker] c.p.m.MusicStoreApplicationTests         : Starting MusicStoreApplicationTests using Java 24.0.2 with PID 98347 (started by nasrulla in /home/nasrulla/IdeaProjects/Music-Store/Music Store)
+2025-08-08T00:28:34.037+05:30  INFO 98347 --- [Music Store] [    Test worker] c.p.m.MusicStoreApplicationTests         : No active profile set, falling back to 1 default profile: "default"
+2025-08-08T00:28:34.410+05:30  INFO 98347 --- [Music Store] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-08-08T00:28:34.443+05:30  INFO 98347 --- [Music Store] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 27 ms. Found 4 JPA repository interfaces.
+2025-08-08T00:28:34.726+05:30  INFO 98347 --- [Music Store] [    Test worker] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-08-08T00:28:34.753+05:30  INFO 98347 --- [Music Store] [    Test worker] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.22.Final
+2025-08-08T00:28:34.770+05:30  INFO 98347 --- [Music Store] [    Test worker] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-08-08T00:28:34.931+05:30  INFO 98347 --- [Music Store] [    Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-08-08T00:28:34.945+05:30  INFO 98347 --- [Music Store] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-08-08T00:28:34.998+05:30  INFO 98347 --- [Music Store] [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@56478522
+2025-08-08T00:28:34.999+05:30  INFO 98347 --- [Music Store] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-08-08T00:28:35.016+05:30  WARN 98347 --- [Music Store] [    Test worker] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-08-08T00:28:35.028+05:30  INFO 98347 --- [Music Store] [    Test worker] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.5
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-08-08T00:28:35.523+05:30  INFO 98347 --- [Music Store] [    Test worker] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-08-08T00:28:35.644+05:30  INFO 98347 --- [Music Store] [    Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: 
+    select
+        a1_0.id,
+        a1_0.email,
+        a1_0.enabled,
+        a1_0.password,
+        a1_0.role,
+        a1_0.username 
+    from
+        admins a1_0
+2025-08-08T00:28:35.969+05:30  WARN 98347 --- [Music Store] [    Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-08-08T00:28:36.097+05:30  WARN 98347 --- [Music Store] [    Test worker] r$InitializeUserDetailsManagerConfigurer : Found 2 UserDetailsService beans, with names [adminService, customerService]. Global Authentication Manager will not use a UserDetailsService for username/password login. Consider publishing a single UserDetailsService bean.
+2025-08-08T00:28:36.373+05:30  INFO 98347 --- [Music Store] [    Test worker] c.p.m.MusicStoreApplicationTests         : Started MusicStoreApplicationTests in 2.498 seconds (process running for 3.084)
+]]></system-out>
+  <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/home/nasrulla/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.17.6/17b32fd9f57deef02842f7f05abc4ad8127fe34e/byte-buddy-agent-1.17.6.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>

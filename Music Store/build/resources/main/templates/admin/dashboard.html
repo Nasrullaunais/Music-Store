@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Music Store</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #343a40;
+        }
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: 0.5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #ced4da;
+            padding: 0.75rem 1rem;
+        }
+        .sidebar .nav-link:hover {
+            color: #fff;
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        .navbar-brand {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            font-size: 1rem;
+            background-color: rgba(0, 0, 0, 0.25);
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+        }
+        .navbar .navbar-toggler {
+            top: 0.25rem;
+            right: 1rem;
+        }
+        .dashboard-card {
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .bg-products {
+            background-color: #cfe2ff;
+            color: #084298;
+        }
+        .bg-customers {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .bg-orders {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        .bg-pending {
+            background-color: #fff3cd;
+            color: #664d03;
+        }
+        main {
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">Music Store Admin</a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="w-100"></div>
+        <div class="navbar-nav">
+            <div class="nav-item text-nowrap">
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="nav-link px-3 bg-dark border-0">Sign out</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="sidebar-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" th:href="@{/admin/dashboard}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/products}">
+                                <i class="bi bi-music-note-list"></i> Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/orders}">
+                                <i class="bi bi-bag"></i> Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/admins}">
+                                <i class="bi bi-person-badge"></i> Admins
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/profile}">
+                                <i class="bi bi-person-circle"></i> Profile
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <span class="text-muted" th:text="${#temporals.format(#temporals.createNow(), 'dd MMM yyyy')}">Today's Date</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="dashboard-card text-center bg-products">
+                            <i class="bi bi-music-note-list card-icon"></i>
+                            <div class="card-title">Total Products</div>
+                            <div class="card-value" th:text="${totalProducts}">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card text-center bg-customers">
+                            <i class="bi bi-people card-icon"></i>
+                            <div class="card-title">Total Customers</div>
+                            <div class="card-value" th:text="${totalCustomers}">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card text-center bg-orders">
+                            <i class="bi bi-bag card-icon"></i>
+                            <div class="card-title">Total Orders</div>
+                            <div class="card-value" th:text="${totalOrders}">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="dashboard-card text-center bg-pending">
+                            <i class="bi bi-hourglass-split card-icon"></i>
+                            <div class="card-title">Pending Orders</div>
+                            <div class="card-value" th:text="${pendingOrders}">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Recent Orders</h5>
+                                <a th:href="@{/admin/orders}" class="btn btn-sm btn-outline-secondary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Customer</th>
+                                                <th>Date</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="order : ${recentOrders}">
+                                                <td th:text="${order.id}">1</td>
+                                                <td th:text="${order.customer.username}">username</td>
+                                                <td th:text="${#temporals.format(order.orderDate, 'dd MMM yyyy HH:mm')}">01 Jan 2023</td>
+                                                <td th:text="${'$' + order.totalAmount}">$99.99</td>
+                                                <td>
+                                                    <span th:class="${'badge ' + 
+                                                        (order.status.name() == 'PENDING' ? 'bg-warning' : 
+                                                        (order.status.name() == 'PROCESSING' ? 'bg-info' : 
+                                                        (order.status.name() == 'SHIPPED' ? 'bg-primary' : 
+                                                        (order.status.name() == 'DELIVERED' ? 'bg-success' : 'bg-danger'))))}">
+                                                        <span th:text="${order.status}">Status</span>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-sm btn-outline-primary">View</a>
+                                                </td>
+                                            </tr>
+                                            <tr th:if="${recentOrders.isEmpty()}">
+                                                <td colspan="6" class="text-center">No orders found</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
