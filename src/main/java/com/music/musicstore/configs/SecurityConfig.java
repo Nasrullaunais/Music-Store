@@ -15,12 +15,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final AdminService adminService;
+    private final com.music.musicstore.services.CombinedUserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public SecurityConfig(AdminService adminService, PasswordEncoder passwordEncoder) {
-        this.adminService = adminService;
+    public SecurityConfig(com.music.musicstore.services.CombinedUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+        this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -29,14 +29,14 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                        .requestMatchers("/", "/home", "/register", "/login", "/products/**").permitAll()
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/a.css", "/musics/**").permitAll()
+                        .requestMatchers("/", "/home", "/register", "/login", "/music/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/admin/dashboard")
+                        .defaultSuccessUrl("/", true)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -44,16 +44,11 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );
-        return http.build();
+        return http.userDetailsService(userDetailsService).build();
     }
 
     @Bean
     public org.springframework.security.core.userdetails.UserDetailsService userDetailsService() {
-        return adminService;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return passwordEncoder;
+        return userDetailsService;
     }
 }

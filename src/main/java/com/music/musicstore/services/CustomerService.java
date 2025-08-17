@@ -34,8 +34,7 @@ public class CustomerService {
         if (customerRepository.findByEmail(customer.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists!");
         }
-        customerRepository.findById(customer.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found with id: " + customer.getId()));
+        // encode password and save new customer
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         return customerRepository.save(customer);
     }
