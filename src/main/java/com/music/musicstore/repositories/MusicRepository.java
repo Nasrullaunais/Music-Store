@@ -1,19 +1,35 @@
 package com.music.musicstore.repositories;
 
-import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.music.musicstore.models.Music;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
 public interface MusicRepository extends JpaRepository<Music, Long> {
-    Music findByTitle(String title);
-    Music findByAlbum(String album);
-    Music findByArtist(String artist);
-    Music findByGenre(String genre);
-    List<Music> findAllByArtist(String artist);
-    List<Music> findAllByGenre(String genre);
-    List<Music> findAllByAlbum(String album);
-    List<Music> findAllByTitleIsContainingIgnoreCase(String title);
+
+    List<Music> findByCategory(String category);
+
+    List<Music> findByArtist(String artist);
+
+    List<Music> findByGenre(String genre);
+
+    List<Music> findByReleaseYear(Integer releaseYear);
+
+    Page<Music> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<Music> findByArtistContainingIgnoreCase(String artist, Pageable pageable);
+
+    Page<Music> findByGenreContainingIgnoreCase(String genre, Pageable pageable);
+
+    Page<Music> findByCategoryContainingIgnoreCase(String category, Pageable pageable);
+
+    // Combined search
+    Page<Music> findByNameContainingIgnoreCaseOrArtistContainingIgnoreCaseOrGenreContainingIgnoreCase(
+            String name, String artist, String genre, Pageable pageable);
+
+
 }
