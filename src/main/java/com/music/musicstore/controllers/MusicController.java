@@ -69,4 +69,22 @@ public class MusicController {
         model.addAttribute("musicPage", musicPage);
         return "music";
     }
+
+    @PostMapping("/{id}")
+    public String updateMusic(@PathVariable Long id, Music music){
+        musicService.updateMusic(music);
+        return "redirect:/music/" + id;
+    }
+
+    @PostMapping("/upload")
+    public String uploadMusic(@RequestParam("file") Music music){
+        musicService.saveMusic(music);
+        return "redirect:/music";
+    }
+
+    @GetMapping("/delete/{id}")
+    public String deleteMusic(@PathVariable Long id){
+        musicService.deleteMusic(id);
+        return "redirect:/music";
+    }
 }
