@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="${music.name}">Music</title>
+    <link rel="stylesheet" th:href="@{/a.css}" />
+</head>
+<body>
+<a th:href="@{/music}">Back to list</a>
+<h1 th:text="${music.name}">Title</h1>
+<p th:text="${music.description}">Description</p>
+<div>
+    <strong>Artist:</strong> <span th:text="${music.artist}"></span>
+</div>
+<div>
+    <strong>Price:</strong> $<span th:text="${#numbers.formatDecimal(music.price,1,2)}"></span>
+</div>
+<audio controls th:if="${filePath}" th:src="@{/${filePath}}"></audio>
+<form th:action="@{'/cart/add/' + ${music.id}}" method="post" style="margin-top:8px">
+    <input type="number" name="quantity" min="1" value="1" />
+    <button type="submit">Add to cart</button>
+</form>
+</body>
+</html>

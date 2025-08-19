@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" th:href="@{/a.css}" />
+</head>
+<body>
+<h1>Admin Dashboard</h1>
+<p th:text="'Welcome, ' + ${username}"></p>
+<nav>
+  <a th:href="@{/music}">View Music</a>
+  <a th:href="@{/}">Home</a>
+</nav>
+<section>
+  <p>Use this panel to manage content, users, and orders. (Placeholder)</p>
+</section>
+</body>
+</html>
