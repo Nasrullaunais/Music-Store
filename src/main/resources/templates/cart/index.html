@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Your Cart</title>
+    <link rel="stylesheet" th:href="@{/a.css}" />
+</head>
+<body>
+<h1>Your Cart</h1>
+<table>
+    <thead>
+    <tr>
+        <th>Track</th>
+        <th>Artist</th>
+        <th>Price</th>
+        <th>Qty</th>
+        <th>Total</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item : ${cart.items}">
+        <td th:text="${item.music.name}">Name</td>
+        <td th:text="${item.music.artist}">Artist</td>
+        <td th:text="${#numbers.formatDecimal(item.unitPrice,1,2)}">0.00</td>
+        <td th:text="${item.quantity}">1</td>
+        <td th:text="${#numbers.formatDecimal(item.totalPrice,1,2)}">0.00</td>
+        <td>
+            <form th:action="@{'/cart/remove/' + ${item.id}}" method="post">
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<h3>Total: $<span th:text="${#numbers.formatDecimal(cart.total,1,2)}">0.00</span></h3>
+<a href="/music">Continue Shopping</a>
+</body>
+</html>
