@@ -1,11 +1,13 @@
 package com.music.musicstore.controllers;
 
+import com.music.musicstore.models.Customer;
 import com.music.musicstore.models.Music;
 import com.music.musicstore.services.MusicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -46,7 +48,8 @@ public class MusicController {
             @RequestParam (required = false) String artist,
             @RequestParam (required = false) String search,
             @RequestParam (required = false) String category,
-            Model model
+            Model model,
+            @AuthenticationPrincipal Customer customer
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("name").descending());
         Page<Music> musicPage;

@@ -11,17 +11,17 @@
   <h1>Create account</h1>
   <form th:action="@{/register}" method="post">
     <label>Username</label>
-    <input type="text" name="username" required />
+    <input type="text" userName="username" required />
     <label>Password</label>
-    <input type="password" name="password" required />
-    <label>First name</label>
-    <input type="text" name="firstName" required />
-    <label>Last name</label>
-    <input type="text" name="lastName" required />
+    <input type="password" userName="password" required />
+    <label>First userName</label>
+    <input type="text" userName="firstName" required />
+    <label>Last userName</label>
+    <input type="text" userName="lastName" required />
     <label>Email</label>
-    <input type="email" name="email" required />
+    <input type="email" userName="email" required />
     <label>Role</label>
-    <select name="role">
+    <select userName="role">
       <option value="ROLE_CUSTOMER">Customer</option>
       <option value="ROLE_ARTIST">Artist</option>
     </select>

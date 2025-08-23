@@ -29,12 +29,11 @@ public class CartController {
 
     @PostMapping("/add/{musicId}")
     public String addToCart(@PathVariable Long musicId,
-                            @RequestParam(defaultValue = "1") int quantity,
                             @AuthenticationPrincipal Customer customer) {
         if (customer == null) {
             return "redirect:/login";
         }
-        cartService.addToCart(customer, musicId, Math.max(1, quantity));
+        cartService.addToCart(customer, musicId);
         return "redirect:/cart";
     }
 

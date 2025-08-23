@@ -48,7 +48,7 @@ public class Customer implements UserDetails {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private Cart cart;
 
     // Default constructor required by JPA
@@ -124,10 +124,6 @@ public class Customer implements UserDetails {
 
     public Cart getCart() {
         return cart;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
     }
 
     // UserDetails implementation

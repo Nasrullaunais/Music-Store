@@ -19,17 +19,18 @@ public class CartItem {
     @JoinColumn(name = "music_id")
     private Music music;
 
-    @Column(nullable = false)
-    private int quantity = 1;
 
     @Column(nullable = false)
     private BigDecimal unitPrice;
 
+    @Column()
+    private String added_at;
+
+
     public CartItem() {}
 
-    public CartItem(Music music, int quantity) {
+    public CartItem(Music music) {
         this.music = music;
-        this.quantity = quantity;
         this.unitPrice = music.getPrice();
     }
 
@@ -53,14 +54,6 @@ public class CartItem {
         this.music = music;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
     public BigDecimal getUnitPrice() {
         return unitPrice;
     }
@@ -71,6 +64,6 @@ public class CartItem {
 
     @Transient
     public BigDecimal getTotalPrice() {
-        return unitPrice.multiply(new BigDecimal(quantity));
+        return unitPrice;
     }
 }

@@ -27,6 +27,13 @@ public class OrderItem {
     @Column(name = "unit_price", nullable = false)
     private BigDecimal unitPrice;
 
+    // Snapshot of music details at time of purchase
+    @Column(name = "music_title")
+    private String musicTitle;
+
+    @Column(name = "artist_name")
+    private String artistName;
+
     // Default constructor required by JPA
     public OrderItem() {
     }
@@ -34,6 +41,13 @@ public class OrderItem {
     public OrderItem(Music music) {
         this.music = music;
         this.unitPrice = music.getPrice();
+    }
+
+    public OrderItem(CartItem cartItem) {
+        this.music = cartItem.getMusic();
+        this.unitPrice = cartItem.getUnitPrice();
+        this.musicTitle = cartItem.getMusic().getName();
+        this.artistName = cartItem.getMusic().getArtist().getUserName();
     }
 
     // Calculate subtotal
@@ -66,7 +80,13 @@ public class OrderItem {
         this.music = music;
     }
 
+    public void setMusicTitle(String musicTitle) {
+        this.musicTitle = musicTitle;
+    }
 
+    public void setArtistName(String artistName) {
+        this.artistName = artistName;
+    }
 
     public BigDecimal getUnitPrice() {
         return unitPrice;
@@ -74,5 +94,13 @@ public class OrderItem {
 
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
+    }
+
+    public String getMusicTitle() {
+        return musicTitle;
+    }
+
+    public String getArtistName() {
+        return artistName;
     }
 }

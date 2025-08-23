@@ -27,7 +27,8 @@ public class CustomerService {
     }
 
 
-    public Customer registerCustomer(Customer customer) {
+
+    public void registerCustomer(Customer customer) {
         if (customerRepository.findByUsername(customer.getUsername()).isPresent()) {
             throw new RuntimeException("User already exists!");
         }
@@ -36,7 +37,7 @@ public class CustomerService {
         }
         // encode password and save new customer
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
-        return customerRepository.save(customer);
+        customerRepository.save(customer);
     }
 
     public Optional<Customer> authenticateUser(String username, String rawPassword) {

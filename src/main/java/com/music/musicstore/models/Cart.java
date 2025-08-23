@@ -17,6 +17,9 @@ public class Cart {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @Column(nullable = false)
+    private BigDecimal totalAmount;
+
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CartItem> items = new ArrayList<>();
 
@@ -24,6 +27,14 @@ public class Cart {
 
     public Cart(Customer customer) {
         this.customer = customer;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
     public Long getId() {
@@ -57,5 +68,9 @@ public class Cart {
         return items.stream()
                 .map(CartItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public void calculateTotalAmount() {
+
     }
 }

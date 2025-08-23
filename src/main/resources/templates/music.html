@@ -29,12 +29,12 @@
     <div class="card" th:each="m : ${musicPage}">
         <img th:src="${m.imageUrl} ?: 'https://picsum.photos/400/200?music'" alt="cover"/>
         <div class="card-body">
-            <h3 class="title" th:text="${m.name}">Title</h3>
+            <h3 class="title" th:text="${m.userName}">Title</h3>
             <div th:text="${m.artist}">Artist</div>
             <div class="price" th:text="${#numbers.formatDecimal(m.price,1,2)}">$0.00</div>
             <audio controls th:if="${m.audioFilePath}" th:src="@{/${m.audioFilePath}}"></audio>
             <form th:action="@{'/cart/add/' + ${m.id}}" method="post" style="margin-top:8px">
-                <input type="number" name="quantity" min="1" value="1" />
+                <input type="number" userName="quantity" min="1" value="1" />
                 <button type="submit">Add to cart</button>
             </form>
             <a th:href="@{'/music/' + ${m.id}}">Details</a>

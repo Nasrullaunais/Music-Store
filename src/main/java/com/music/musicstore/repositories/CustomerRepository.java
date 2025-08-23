@@ -6,7 +6,6 @@ import com.music.musicstore.models.Customer;
 import java.util.List;
 import java.util.Optional;
 
-@org.springframework.stereotype.Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Optional<Customer> findByUsername(String username);
     Optional<Customer> findByEmail(String email);

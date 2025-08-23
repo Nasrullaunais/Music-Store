@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomer(Customer customer);
-
+    List<Order> findByCustomerOrderByOrderDateDesc(Customer customer);
     List<Order> findByOrderDateBetween(LocalDateTime startDate, LocalDateTime endDate);
     Page<Order> findByOrderDateBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
     Page<Order> findByCustomer(Customer customer, Pageable pageable);
