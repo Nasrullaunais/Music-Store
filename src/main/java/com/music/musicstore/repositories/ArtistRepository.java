@@ -16,4 +16,6 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
     default void deleteByName(String name) {
 
     }
+
+    Optional<Artist> findById(Long id);
 }
