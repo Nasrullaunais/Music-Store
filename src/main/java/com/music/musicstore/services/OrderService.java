@@ -15,12 +15,14 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CartService cartService;
     private final CartItemRepository cartItemRepository;
+    private final EmailSender emailSender;
 
     @Autowired
-    public OrderService(OrderRepository orderRepository, CartService cartService, CartItemRepository cartItemRepository) {
+    public OrderService(OrderRepository orderRepository, CartService cartService, CartItemRepository cartItemRepository, EmailSender emailSender) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
         this.cartItemRepository = cartItemRepository;
+        this.emailSender = emailSender;
     }
 
     public void placeOrder(Customer customer){
@@ -34,6 +36,8 @@ public class OrderService {
         order.setCustomer(customer);
         order.setTotalAmount(cart.getTotalAmount());
 
+        emailSender.sendReceipt(order.getTotalAmount(), cart.getItemList(), customer.getEmail(), order.getId().toString());
+
         for(CartItem cartItem : cart.getItems()){
             OrderItem orderItem = new OrderItem(cartItem);
             orderItem.setOrder(order);
@@ -42,6 +46,8 @@ public class OrderService {
 
         cartItemRepository.deleteAll(cart.getItems());
         cart.getItems().clear();
+
+
 
         orderRepository.save(order);
     }

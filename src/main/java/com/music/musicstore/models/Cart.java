@@ -29,6 +29,10 @@ public class Cart {
         this.customer = customer;
     }
 
+    public void setItems(List<CartItem> items) {
+        this.items = items;
+    }
+
     public BigDecimal getTotalAmount() {
         return totalAmount;
     }
@@ -51,6 +55,14 @@ public class Cart {
 
     public List<CartItem> getItems() {
         return items;
+    }
+
+    public StringBuilder getItemList() {
+        StringBuilder list = new StringBuilder();
+        for (CartItem item : items) {
+            list.append(item.getMusic().getName()).append(", ");
+        }
+        return list;
     }
 
     public void addItem(CartItem item) {
