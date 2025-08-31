@@ -1,6 +1,8 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.order;
 
 
+import com.music.musicstore.models.music.Music;
+import com.music.musicstore.models.cart.CartItem;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 

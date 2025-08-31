@@ -1,6 +1,9 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.models.*;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.cart.CartItem;
+import com.music.musicstore.models.music.Music;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.CartItemRepository;
 import com.music.musicstore.repositories.CartRepository;
 import com.music.musicstore.repositories.MusicRepository;

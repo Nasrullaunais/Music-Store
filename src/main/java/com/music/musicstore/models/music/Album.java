@@ -1,4 +1,4 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.music;
 import jakarta.persistence.*;
 
 @Entity

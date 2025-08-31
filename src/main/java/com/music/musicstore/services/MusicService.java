@@ -1,6 +1,6 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.models.Music;
+import com.music.musicstore.models.music.Music;
 import com.music.musicstore.repositories.MusicRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

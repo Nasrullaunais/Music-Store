@@ -17,6 +17,6 @@ public class StaffService {
     }
 
     public UserDetails loadUserByUsername(String username) {
-        return staffRepository.findByName(username).orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
+        return staffRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
     }
 }

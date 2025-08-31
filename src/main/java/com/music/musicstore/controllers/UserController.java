@@ -1,7 +1,6 @@
 package com.music.musicstore.controllers;
 
-import com.music.musicstore.models.Artist;
-import com.music.musicstore.models.Customer;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.services.CustomerService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -48,8 +47,8 @@ public class UserController {
         return "register";
     }
 
-    @PostMapping("/artist/register")
-    public String doArtistRegister(@ModelAttribute Artist user) {
-
-    }
+//    @PostMapping("/artist/register")
+//    public String doArtistRegister(@ModelAttribute Artist user) {
+//
+//    }
 }

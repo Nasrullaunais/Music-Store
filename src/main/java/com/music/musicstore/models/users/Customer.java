@@ -1,5 +1,6 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.users;
 
+import com.music.musicstore.models.cart.Cart;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

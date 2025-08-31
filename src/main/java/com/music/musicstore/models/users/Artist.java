@@ -1,5 +1,6 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.users;
 
+import com.music.musicstore.models.music.Music;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -95,10 +96,6 @@ public class Artist implements UserDetails {
     @Override
     public String getUsername() {
         return userName;
-    }
-
-    public void setName(String newName) {
-        this.userName = newName;
     }
 
 }

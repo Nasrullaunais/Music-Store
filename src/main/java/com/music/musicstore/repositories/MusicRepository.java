@@ -1,7 +1,7 @@
 package com.music.musicstore.repositories;
 
-import com.music.musicstore.models.Artist;
-import com.music.musicstore.models.Music;
+import com.music.musicstore.models.users.Artist;
+import com.music.musicstore.models.music.Music;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

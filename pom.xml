@@ -11,7 +11,7 @@
     <groupId>com.music</groupId>
     <artifactId>MusicStore</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <userName>Music Store</userName>
+    <name>Music Store</name>
     <description>Music Store</description>
     <url/>
     <licenses>

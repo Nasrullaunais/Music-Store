@@ -1,9 +1,8 @@
 package com.music.musicstore.controllers;
 
-import com.music.musicstore.models.Artist;
-import com.music.musicstore.models.Customer;
-import com.music.musicstore.models.Music;
-import com.music.musicstore.repositories.AdminRepository;
+import com.music.musicstore.models.users.Artist;
+import com.music.musicstore.models.users.Customer;
+import com.music.musicstore.models.music.Music;
 import com.music.musicstore.repositories.ArtistRepository;
 import com.music.musicstore.repositories.MusicRepository;
 import com.music.musicstore.services.FileStorageService;

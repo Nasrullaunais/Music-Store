@@ -1,5 +1,6 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.cart;
 
+import com.music.musicstore.models.users.Customer;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -17,7 +18,7 @@ public class Cart {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
-    @Column(nullable = false)
+    @Column
     private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

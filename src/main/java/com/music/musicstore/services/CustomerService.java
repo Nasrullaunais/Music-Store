@@ -1,6 +1,6 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.models.Customer;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,13 +1,11 @@
 package com.music.musicstore.controllers;
 
-import com.music.musicstore.models.Cart;
-import com.music.musicstore.models.Customer;
-import com.music.musicstore.models.Order;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.users.Customer;
+import com.music.musicstore.models.order.Order;
 import com.music.musicstore.repositories.OrderRepository;
 import com.music.musicstore.services.CartService;
 import com.music.musicstore.services.MusicService;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

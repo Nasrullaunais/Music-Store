@@ -1,6 +1,6 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.models.Artist;
+import com.music.musicstore.models.users.Artist;
 import com.music.musicstore.repositories.ArtistRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,11 +28,14 @@ public class ArtistService {
             throw new RuntimeException("Artist already exists!");
         }
         String encodedPassword = passwordEncoder.encode(rawPassword);
-        artistRepository.save(new Artist(name, encodedPassword));
+        Artist artist = new Artist();
+        artist.setUserName(name);
+        artist.setPassword(encodedPassword);
+        artistRepository.save(artist);
     }
 
     public  void deleteArtistByName(String name){
-        artistRepository.deleteByName(name);
+        artistRepository.deleteByUserName(name);
     }
 
     public void updateArtist(Artist artist) {
@@ -47,7 +50,7 @@ public class ArtistService {
     public void updateArtistUsername(Long id, String newName) {
         Artist artist = artistRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Artist not found with id: " + id));
-        artist.setName(newName);
+        artist.setUserName(newName);
         artistRepository.save(artist);
     }
 }

@@ -1,6 +1,11 @@
 package com.music.musicstore.configs;
 
-import com.music.musicstore.models.*;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.cart.CartItem;
+import com.music.musicstore.models.music.Music;
+import com.music.musicstore.models.users.Admin;
+import com.music.musicstore.models.users.Artist;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

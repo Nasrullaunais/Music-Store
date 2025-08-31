@@ -1,7 +1,7 @@
 package com.music.musicstore.repositories;
 
-import com.music.musicstore.models.Cart;
-import com.music.musicstore.models.Customer;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.users.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -1,5 +1,7 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.order;
 
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.users.Customer;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
