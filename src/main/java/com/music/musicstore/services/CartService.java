@@ -56,4 +56,8 @@ public class CartService {
             throw new IllegalArgumentException("Item does not belong to user's cart");
         }
     }
+
+    public Cart saveCart(Cart cart) {
+        return cartRepository.save(cart);
+    }
 }

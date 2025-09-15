@@ -1,61 +1,67 @@
 package com.music.musicstore.configs;
 
 
-import com.music.musicstore.services.AdminService;
-import com.music.musicstore.services.CombinedUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private final CombinedUserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
-
     @Autowired
-    public SecurityConfig(CombinedUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   CombinedUserDetailsService userDetailsService,
-                                                   PasswordEncoder passwordEncoder) throws Exception {
-        return http
-                .userDetailsService(userDetailsService)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/artist/**").hasAnyRole("ADMIN", "STAFF", "ARTIST")
-                        .requestMatchers("/customer/**").hasAnyRole("ADMIN", "STAFF", "CUSTOMER")
-                        .requestMatchers("/public/**", "/login", "/register").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/login")
-                        .permitAll()
-                )
-                .csrf(AbstractHttpConfigurer::disable)
-                .build()
-                ;
-    }
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // Public endpoints
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/music/browse/**", "/api/music/preview/**").permitAll()
+                .requestMatchers("/api/reviews/music/**").permitAll()
+                .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/").permitAll()
 
-    @Bean
-    public org.springframework.security.core.userdetails.UserDetailsService userDetailsService() {
-        return userDetailsService;
+                // Customer endpoints
+                .requestMatchers("/api/cart/**", "/api/orders/**", "/api/playlists/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/music/purchase/**", "/api/music/download/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/tickets/create").hasAnyRole("CUSTOMER", "ARTIST")
+                .requestMatchers("/api/reviews/create").hasRole("CUSTOMER")
+
+                // Artist endpoints
+                .requestMatchers("/api/music/upload/**", "/api/music/manage/**").hasRole("ARTIST")
+                .requestMatchers("/api/reviews/artist/**").hasRole("ARTIST")
+                .requestMatchers("/api/analytics/artist/**").hasRole("ARTIST")
+
+                // Staff endpoints
+                .requestMatchers("/api/tickets/manage/**", "/api/tickets/reply/**").hasRole("STAFF")
+                .requestMatchers("/api/analytics/website/**", "/api/reports/sales/**").hasRole("STAFF")
+
+                // Admin endpoints
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/users/manage/**").hasRole("ADMIN")
+                .requestMatchers("/api/analytics/admin/**").hasRole("ADMIN")
+
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 }

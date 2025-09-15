@@ -1,6 +1,6 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.repositories.ArtistRepository;
+import com.music.musicstore.models.users.Staff;
 import com.music.musicstore.repositories.StaffRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +17,21 @@ public class StaffService {
     }
 
     public UserDetails loadUserByUsername(String username) {
-        return staffRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
+        return staffRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
+    }
+
+    // Additional methods needed for UnifiedUserService
+    public Staff save(Staff staff) {
+        return staffRepository.save(staff);
+    }
+
+    public Staff findByUsername(String username) {
+        return staffRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
+    }
+
+    public long count() {
+        return staffRepository.count();
     }
 }

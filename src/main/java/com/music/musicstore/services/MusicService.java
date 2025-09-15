@@ -19,8 +19,8 @@ public class MusicService {
     }
 
 
-    public void saveMusic(Music music){
-        musicRepository.save(music);
+    public Music saveMusic(Music music){
+        return musicRepository.save(music);
     }
 
     public void deleteMusic(Long id){

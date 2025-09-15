@@ -32,7 +32,7 @@ public class UserController {
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("ROLE_CUSTOMER");
         }
-        customerService.registerCustomer(user);
+//        customerService.registerCustomer(user);
         return "redirect:/login?registered";
     }
 

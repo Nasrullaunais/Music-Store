@@ -49,23 +49,25 @@ public class AdminService implements UserDetailsService {
         return adminRepository.findAll();
     }
 
-    public Optional<Admin> getAdminById(Long id) {
-        return adminRepository.findById(id);
-    }
-
-    public Optional<Admin> getAdminByUsername(String username) {
-        return adminRepository.findByUsername(username);
-    }
-
-    public Admin updateAdmin(Admin admin) {
-        // Check if admin exists
-        adminRepository.findById(admin.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Admin not found with id: " + admin.getId()));
-
+    // Additional methods needed for UnifiedUserService
+    public Admin save(Admin admin) {
         return adminRepository.save(admin);
     }
 
-    public void deleteAdmin(Long id) {
+    public Admin findByUsername(String username) {
+        return adminRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Admin not found with username: " + username));
+    }
+
+    public long count() {
+        return adminRepository.count();
+    }
+
+    public Optional<Admin> findById(Long id) {
+        return adminRepository.findById(id);
+    }
+
+    public void deleteById(Long id) {
         adminRepository.deleteById(id);
     }
 }

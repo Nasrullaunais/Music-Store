@@ -26,35 +26,13 @@ public class CustomerService {
                 .orElseThrow(() -> new UsernameNotFoundException("Customer not found with username: " + username));
     }
 
-
-
-    public void registerCustomer(Customer customer) {
-        if (customerRepository.findByUsername(customer.getUsername()).isPresent()) {
-            throw new RuntimeException("User already exists!");
-        }
-        if (customerRepository.findByEmail(customer.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists!");
-        }
-        // encode password and save new customer
-        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
-        customerRepository.save(customer);
-    }
-
-    public Optional<Customer> authenticateUser(String username, String rawPassword) {
+    public Customer findByUsername(String username) {
         return customerRepository.findByUsername(username)
-                .filter(user -> passwordEncoder.matches(rawPassword, user.getPassword()));
+                .orElseThrow(() -> new RuntimeException("Customer not found with username: " + username));
     }
 
-    public Customer updateUser(Customer customer) {
-        customerRepository.findById(customer.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found with id: " + customer.getId()));
-
-        if (customer.getPassword() != null && !customer.getPassword().isEmpty()) {
-            customer.setPassword(passwordEncoder.encode(customer.getPassword()));
-        }
-
-        return customerRepository.save(customer);
+    // Add missing count method for UnifiedUserService
+    public long count() {
+        return customerRepository.count();
     }
-
-
 }

@@ -53,4 +53,18 @@ public class ArtistService {
         artist.setUserName(newName);
         artistRepository.save(artist);
     }
+
+    // Additional methods needed for UnifiedUserService
+    public Artist save(Artist artist) {
+        return artistRepository.save(artist);
+    }
+
+    public Artist findByUserName(String username) {
+        return artistRepository.findByUserName(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Artist not found with username: " + username));
+    }
+
+    public long count() {
+        return artistRepository.count();
+    }
 }

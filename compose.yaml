@@ -1,0 +1,15 @@
+services:
+  pg-music-store:
+    image: postgres:alpine
+    ports:
+      - 15432:5432
+    environment:
+      POSTGRES_PASSWORD: 0090
+      POSTGRES_USER: postgres
+      POSTGRES_DB: music_store_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+    driver: local
