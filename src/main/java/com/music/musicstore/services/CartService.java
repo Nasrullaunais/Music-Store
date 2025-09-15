@@ -60,4 +60,19 @@ public class CartService {
     public Cart saveCart(Cart cart) {
         return cartRepository.save(cart);
     }
+
+    // Missing methods for customer functionality
+    public Cart getCartByUsername(String username) {
+        // Implementation would get customer by username and return their cart
+        throw new UnsupportedOperationException("Get cart by username not implemented yet");
+    }
+
+    public void addToCart(String username, Long musicId, Customer customer) {
+        addToCart(customer, musicId);
+    }
+
+    public void removeFromCart(String username, Long cartItemId) {
+        // Implementation would get customer by username and remove item
+        throw new UnsupportedOperationException("Remove from cart by username not implemented yet");
+    }
 }

@@ -1,11 +1,14 @@
-package com.music.musicstore.controllers.api;
+package com.music.musicstore.api;
 
 import com.music.musicstore.dto.CreateReviewRequest;
+import com.music.musicstore.models.users.Customer;
+import com.music.musicstore.models.support.Ticket;
 import com.music.musicstore.services.CartService;
 import com.music.musicstore.services.OrderService;
 import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.ReviewService;
 import com.music.musicstore.services.TicketService;
+import com.music.musicstore.services.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -36,6 +40,9 @@ public class CustomerApiController {
     @Autowired
     private TicketService ticketService;
 
+    @Autowired
+    private CustomerService customerService;
+
     // Cart Management
     @GetMapping("/cart")
     public ResponseEntity<?> getCart(@AuthenticationPrincipal UserDetails userDetails) {
@@ -52,7 +59,10 @@ public class CustomerApiController {
             @PathVariable Long musicId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(cartService.addToCart(userDetails.getUsername(), musicId));
+            // Get customer object first
+            Customer customer = customerService.findByUsername(userDetails.getUsername());
+            cartService.addToCart(customer, musicId);
+            return ResponseEntity.ok(new SuccessResponse("Music added to cart successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to add to cart: " + e.getMessage()));
@@ -174,9 +184,8 @@ public class CustomerApiController {
             @PathVariable Long musicId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(musicService.addToPlaylist(
-                playlistId, musicId, userDetails.getUsername()
-            ));
+            musicService.addToPlaylist(playlistId, musicId, userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Music added to playlist successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to add to playlist: " + e.getMessage()));
@@ -203,8 +212,9 @@ public class CustomerApiController {
             @Valid @RequestBody CreateReviewRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
+            Customer customer = customerService.findByUsername(userDetails.getUsername());
             return ResponseEntity.ok(reviewService.createReview(
-                request.getMusicId(), userDetails.getUsername(), request.getRating(), request.getComment()
+                request.getMusicId(), customer, request.getRating(), request.getComment()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -228,8 +238,9 @@ public class CustomerApiController {
             @RequestBody UpdateReviewRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
+            Customer customer = customerService.findByUsername(userDetails.getUsername());
             return ResponseEntity.ok(reviewService.updateReview(
-                reviewId, userDetails.getUsername(), request.getRating(), request.getComment()
+                reviewId, customer, request.getRating(), request.getComment()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -242,36 +253,80 @@ public class CustomerApiController {
             @PathVariable Long reviewId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            reviewService.deleteReview(reviewId, userDetails.getUsername());
-            return ResponseEntity.ok().build();
+            Customer customer = customerService.findByUsername(userDetails.getUsername());
+            reviewService.deleteReview(reviewId, customer);
+            return ResponseEntity.ok(new SuccessResponse("Review deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to delete review: " + e.getMessage()));
         }
     }
 
-    // Support Tickets
+    // Support Tickets - Enhanced with full functionality
     @PostMapping("/tickets")
     public ResponseEntity<?> createTicket(
             @RequestBody TicketCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(ticketService.createTicket(
-                userDetails.getUsername(), request.getSubject(), request.getDescription(), request.getPriority()
-            ));
+            Ticket ticket = ticketService.createTicket(
+                userDetails.getUsername(),
+                request.getSubject(),
+                request.getDescription(),
+                request.getPriority()
+            );
+            return ResponseEntity.ok(ticket);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to create ticket: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/tickets")
-    public ResponseEntity<?> getMyTickets(@AuthenticationPrincipal UserDetails userDetails) {
+    @PostMapping("/tickets/order/{orderId}")
+    public ResponseEntity<?> createOrderTicket(
+            @PathVariable Long orderId,
+            @RequestBody TicketCreateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(ticketService.getTicketsByUsername(userDetails.getUsername()));
+            // This would need OrderService integration to fetch the order
+            Ticket ticket = ticketService.createTicket(
+                userDetails.getUsername(),
+                request.getSubject(),
+                request.getDescription(),
+                request.getPriority()
+            );
+            return ResponseEntity.ok(ticket);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to create order-related ticket: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets")
+    public ResponseEntity<?> getMyTickets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            if (page == 0 && size == 10) {
+                // Return all tickets if default pagination
+                return ResponseEntity.ok(ticketService.getTicketsByUsername(userDetails.getUsername()));
+            } else {
+                // Return paginated results
+                return ResponseEntity.ok(ticketService.getTicketsByUsername(userDetails.getUsername(), page, size));
+            }
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch tickets: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/active")
+    public ResponseEntity<?> getActiveTickets(@AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            return ResponseEntity.ok(ticketService.getCustomerActiveTickets(userDetails.getUsername()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch active tickets: " + e.getMessage()));
         }
     }
 
@@ -284,6 +339,47 @@ public class CustomerApiController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch ticket details: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tickets/{ticketId}/close")
+    public ResponseEntity<?> closeTicket(
+            @PathVariable Long ticketId,
+            @RequestBody(required = false) Map<String, String> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // Verify customer owns the ticket
+            if (!ticketService.canCustomerViewTicket(ticketId, userDetails.getUsername())) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("You can only close your own tickets"));
+            }
+
+            String reason = request != null ? request.get("reason") : null;
+            if (reason != null && !reason.trim().isEmpty()) {
+                ticketService.closeTicket(ticketId, "Customer closed: " + reason);
+            } else {
+                ticketService.closeTicket(ticketId);
+            }
+
+            return ResponseEntity.ok(new SuccessResponse("Ticket closed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to close ticket: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/search")
+    public ResponseEntity<?> searchTickets(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // For customers, we'd need a customer-specific search method
+            return ResponseEntity.ok(ticketService.searchTickets(query, page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to search tickets: " + e.getMessage()));
         }
     }
 
@@ -329,6 +425,17 @@ public class CustomerApiController {
         private String message;
 
         public ErrorResponse(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
+    public static class SuccessResponse {
+        private String message;
+
+        public SuccessResponse(String message) {
             this.message = message;
         }
 

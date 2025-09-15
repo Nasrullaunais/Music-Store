@@ -31,6 +31,11 @@ public class StaffService {
                 .orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
     }
 
+    public Staff findById(Long id) {
+        return staffRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Staff not found with id: " + id));
+    }
+
     public long count() {
         return staffRepository.count();
     }

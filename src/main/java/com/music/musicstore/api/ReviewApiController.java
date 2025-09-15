@@ -1,4 +1,4 @@
-package com.music.musicstore.controllers.api;
+package com.music.musicstore.api;
 
 import com.music.musicstore.dto.CreateReviewRequest;
 import com.music.musicstore.dto.ReviewDto;

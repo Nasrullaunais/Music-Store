@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder; // Import this
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -34,5 +34,22 @@ public class CustomerService {
     // Add missing count method for UnifiedUserService
     public long count() {
         return customerRepository.count();
+    }
+
+    public Customer createCustomer(Customer customer) {
+        return customerRepository.save(customer);
+    }
+
+    public Customer save(Customer customer) {
+        return customerRepository.save(customer);
+    }
+
+    public Customer findById(Long id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + id));
+    }
+
+    public Optional<Customer> findByIdOptional(Long id) {
+        return customerRepository.findById(id);
     }
 }

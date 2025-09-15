@@ -63,7 +63,12 @@ public class AdminService implements UserDetailsService {
         return adminRepository.count();
     }
 
-    public Optional<Admin> findById(Long id) {
+    public Admin findById(Long id) {
+        return adminRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + id));
+    }
+
+    public Optional<Admin> findByIdOptional(Long id) {
         return adminRepository.findById(id);
     }
 

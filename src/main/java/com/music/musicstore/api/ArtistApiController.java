@@ -1,6 +1,7 @@
-package com.music.musicstore.controllers.api;
+package com.music.musicstore.api;
 
 import com.music.musicstore.dto.MusicDto;
+import com.music.musicstore.models.music.Music;
 import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,17 +28,18 @@ public class ArtistApiController {
 
     @PostMapping("/music/upload")
     public ResponseEntity<?> uploadMusic(
-            @RequestParam("title") String title,
-            @RequestParam("genre") String genre,
-            @RequestParam("price") Double price,
-            @RequestParam("description") String description,
-            @RequestParam("musicFile") MultipartFile musicFile,
-            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
+            @RequestParam String title,
+            @RequestParam String genre,
+            @RequestParam Double price,
+            @RequestParam String description,
+            @RequestParam MultipartFile musicFile,
+            @RequestParam MultipartFile coverImage,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            MusicDto musicDto = musicService.uploadMusic(
+            Music music = musicService.uploadMusic(
                 title, genre, price, description, musicFile, coverImage, userDetails.getUsername()
             );
+            MusicDto musicDto = convertToDto(music);
             return ResponseEntity.ok(musicDto);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -48,8 +50,11 @@ public class ArtistApiController {
     @GetMapping("/music/my-music")
     public ResponseEntity<?> getMyMusic(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            List<MusicDto> musicList = musicService.getMusicByArtist(userDetails.getUsername());
-            return ResponseEntity.ok(musicList);
+            List<Music> musicList = musicService.getMusicByArtist(userDetails.getUsername());
+            List<MusicDto> musicDtoList = musicList.stream()
+                .map(this::convertToDto)
+                .toList();
+            return ResponseEntity.ok(musicDtoList);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch music: " + e.getMessage()));
@@ -62,8 +67,9 @@ public class ArtistApiController {
             @RequestBody MusicDto musicDto,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            MusicDto updatedMusic = musicService.updateMusic(musicId, musicDto, userDetails.getUsername());
-            return ResponseEntity.ok(updatedMusic);
+            Music updatedMusic = musicService.updateMusic(musicId, musicDto, userDetails.getUsername());
+            MusicDto updatedMusicDto = convertToDto(updatedMusic);
+            return ResponseEntity.ok(updatedMusicDto);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update music: " + e.getMessage()));
@@ -112,6 +118,22 @@ public class ArtistApiController {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch review analytics: " + e.getMessage()));
         }
+    }
+
+    // Helper method to convert Music entity to MusicDto
+    private MusicDto convertToDto(Music music) {
+        MusicDto dto = new MusicDto();
+        dto.setId(music.getId());
+        dto.setName(music.getName());
+        dto.setGenre(music.getGenre());
+        dto.setPrice(music.getPrice());
+        // Use the helper method to get artist name
+        if (music.getArtist() != null) {
+            dto.setArtist(music.getArtist().getUserName());
+        } else {
+            dto.setArtist(music.getCategory()); // Fallback
+        }
+        return dto;
     }
 
     public static class ErrorResponse {

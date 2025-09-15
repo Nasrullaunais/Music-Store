@@ -1,4 +1,4 @@
-package com.music.musicstore.controllers.api;
+package com.music.musicstore.api;
 
 import com.music.musicstore.dto.UnifiedRegisterRequest;
 import com.music.musicstore.dto.UserDto;
@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -107,7 +109,8 @@ public class AdminApiController {
             @PathVariable Long userId,
             @RequestBody UserStatusUpdateRequest request) {
         try {
-            return ResponseEntity.ok(unifiedUserService.updateUserStatus(userId, request.isEnabled()));
+            unifiedUserService.updateUserStatus(userId, request.isEnabled());
+            return ResponseEntity.ok(new SuccessResponse("User status updated successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update user status: " + e.getMessage()));
@@ -167,7 +170,8 @@ public class AdminApiController {
     @PutMapping("/orders/{orderId}/refund")
     public ResponseEntity<?> refundOrder(@PathVariable Long orderId) {
         try {
-            return ResponseEntity.ok(orderService.refundOrder(orderId));
+            orderService.refundOrder(orderId);
+            return ResponseEntity.ok(new SuccessResponse("Order refunded successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to refund order: " + e.getMessage()));
@@ -233,6 +237,136 @@ public class AdminApiController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to create backup: " + e.getMessage()));
+        }
+    }
+
+    // Admin Ticket Management - Full control over all tickets
+    @GetMapping("/tickets")
+    public ResponseEntity<?> getAllTicketsAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority) {
+        try {
+            if (priority != null) {
+                return ResponseEntity.ok(ticketService.getTicketsByPriority(priority));
+            }
+            return ResponseEntity.ok(ticketService.getAllTickets(page, size, status));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch tickets: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/{ticketId}")
+    public ResponseEntity<?> getTicketDetailsAdmin(@PathVariable Long ticketId) {
+        try {
+            return ResponseEntity.ok(ticketService.getTicketById(ticketId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch ticket: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tickets/{ticketId}/reply")
+    public ResponseEntity<?> replyToTicketAdmin(
+            @PathVariable Long ticketId,
+            @RequestBody AdminTicketReplyRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            ticketService.replyToTicket(ticketId, request.getMessage(), userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Admin reply sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to reply to ticket: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/tickets/{ticketId}/status")
+    public ResponseEntity<?> updateTicketStatusAdmin(
+            @PathVariable Long ticketId,
+            @RequestBody TicketStatusUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            ticketService.updateTicketStatus(ticketId, request.getStatus(), userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Ticket status updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to update ticket status: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/tickets/{ticketId}")
+    public ResponseEntity<?> deleteTicket(@PathVariable Long ticketId) {
+        try {
+            // Admin can force close/delete tickets
+            ticketService.closeTicket(ticketId, "Administrative closure");
+            return ResponseEntity.ok(new SuccessResponse("Ticket deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to delete ticket: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tickets/bulk/status")
+    public ResponseEntity<?> bulkUpdateTicketsAdmin(
+            @RequestBody BulkTicketUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            ticketService.bulkUpdateStatus(request.getTicketIds(), request.getNewStatus(), userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Tickets updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to update tickets: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tickets/bulk/delete")
+    public ResponseEntity<?> bulkDeleteTickets(
+            @RequestBody BulkTicketDeleteRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            ticketService.bulkCloseTickets(request.getTicketIds(), "Administrative bulk closure");
+            return ResponseEntity.ok(new SuccessResponse("Tickets deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to delete tickets: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/search")
+    public ResponseEntity<?> searchTicketsAdmin(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            return ResponseEntity.ok(ticketService.searchTickets(query, page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to search tickets: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/analytics")
+    public ResponseEntity<?> getTicketAnalytics(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        try {
+            return ResponseEntity.ok(ticketService.getTicketAnalytics(startDate, endDate));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch ticket analytics: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/stats/detailed")
+    public ResponseEntity<?> getDetailedTicketStats() {
+        try {
+            Map<String, Object> detailedStats = ticketService.getDetailedTicketStats();
+            return ResponseEntity.ok(detailedStats);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch detailed ticket statistics: " + e.getMessage()));
         }
     }
 
@@ -328,5 +462,48 @@ public class AdminApiController {
 
         public String getMessage() { return message; }
         public void setMessage(String message) { this.message = message; }
+    }
+
+    public static class SuccessResponse {
+        private String message;
+
+        public SuccessResponse(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
+    public static class AdminTicketReplyRequest {
+        private String message;
+
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
+    public static class TicketStatusUpdateRequest {
+        private String status;
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+    }
+
+    public static class BulkTicketUpdateRequest {
+        private List<Long> ticketIds;
+        private String newStatus;
+
+        public List<Long> getTicketIds() { return ticketIds; }
+        public void setTicketIds(List<Long> ticketIds) { this.ticketIds = ticketIds; }
+
+        public String getNewStatus() { return newStatus; }
+        public void setNewStatus(String newStatus) { this.newStatus = newStatus; }
+    }
+
+    public static class BulkTicketDeleteRequest {
+        private List<Long> ticketIds;
+
+        public List<Long> getTicketIds() { return ticketIds; }
+        public void setTicketIds(List<Long> ticketIds) { this.ticketIds = ticketIds; }
     }
 }

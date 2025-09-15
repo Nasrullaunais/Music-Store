@@ -67,4 +67,9 @@ public class ArtistService {
     public long count() {
         return artistRepository.count();
     }
+
+    public Artist findById(Long id) {
+        return artistRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Artist not found with id: " + id));
+    }
 }

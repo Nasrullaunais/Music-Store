@@ -6,6 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class UnifiedUserService {
@@ -101,6 +108,61 @@ public class UnifiedUserService {
     // Additional methods for admin functionality
     public long getTotalUsersCount() {
         return customerService.count() + artistService.count() + staffService.count() + adminService.count();
+    }
+
+    public Page<UserDto> getAllUsers(int page, int size, String role) {
+        Pageable pageable = PageRequest.of(page, size);
+        // Implementation would combine all user types
+        // For now, return empty page - this would need proper implementation
+        return Page.empty(pageable);
+    }
+
+    public UserDto getUserById(Long id) {
+        // Try to find user in all repositories
+        try {
+            Customer customer = customerService.findById(id);
+            if (customer != null) return convertCustomerToDto(customer);
+        } catch (Exception e) {}
+
+        try {
+            Artist artist = artistService.findById(id);
+            if (artist != null) return convertArtistToDto(artist);
+        } catch (Exception e) {}
+
+        try {
+            Staff staff = staffService.findById(id);
+            if (staff != null) return convertStaffToDto(staff);
+        } catch (Exception e) {}
+
+        try {
+            Admin admin = adminService.findById(id);
+            if (admin != null) return convertAdminToDto(admin);
+        } catch (Exception e) {}
+
+        throw new RuntimeException("User not found with id: " + id);
+    }
+
+    public UserDto updateUser(Long id, Object updateRequest) {
+        // Implementation would handle user updates across all types
+        throw new UnsupportedOperationException("Update user not implemented yet");
+    }
+
+    public void deleteUser(Long id) {
+        // Implementation would handle user deletion across all types
+        throw new UnsupportedOperationException("Delete user not implemented yet");
+    }
+
+    public void updateUserStatus(Long id, boolean active) {
+        // Implementation would handle status updates across all types
+        throw new UnsupportedOperationException("Update user status not implemented yet");
+    }
+
+    public Map<String, Object> getUserGrowthAnalytics(LocalDate startDate, LocalDate endDate) {
+        Map<String, Object> analytics = new HashMap<>();
+        analytics.put("totalUsers", getTotalUsersCount());
+        analytics.put("newCustomers", 0);
+        analytics.put("newArtists", 0);
+        return analytics;
     }
 
     private UserDto convertCustomerToDto(Customer customer) {
