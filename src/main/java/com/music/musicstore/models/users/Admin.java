@@ -1,4 +1,4 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.users;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

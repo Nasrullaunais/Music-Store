@@ -1,6 +1,6 @@
 package com.music.musicstore.controllers;
 
-import com.music.musicstore.models.Customer;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.services.CustomerService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -35,4 +35,20 @@ public class UserController {
         customerService.registerCustomer(user);
         return "redirect:/login?registered";
     }
+
+    @GetMapping("/artist/login")
+    public String artistLoginPage() {
+        return "login";
+    }
+
+    @GetMapping("/artist/register")
+    public String artistRegisterPage(Model model) {
+        model.addAttribute("user", new Customer());
+        return "register";
+    }
+
+//    @PostMapping("/artist/register")
+//    public String doArtistRegister(@ModelAttribute Artist user) {
+//
+//    }
 }

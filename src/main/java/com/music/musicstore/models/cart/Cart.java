@@ -1,5 +1,6 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.cart;
 
+import com.music.musicstore.models.users.Customer;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -17,6 +18,9 @@ public class Cart {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @Column
+    private BigDecimal totalAmount;
+
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CartItem> items = new ArrayList<>();
 
@@ -24,6 +28,18 @@ public class Cart {
 
     public Cart(Customer customer) {
         this.customer = customer;
+    }
+
+    public void setItems(List<CartItem> items) {
+        this.items = items;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
     public Long getId() {
@@ -42,6 +58,14 @@ public class Cart {
         return items;
     }
 
+    public StringBuilder getItemList() {
+        StringBuilder list = new StringBuilder();
+        for (CartItem item : items) {
+            list.append(item.getMusic().getName()).append(", ");
+        }
+        return list;
+    }
+
     public void addItem(CartItem item) {
         items.add(item);
         item.setCart(this);
@@ -57,5 +81,9 @@ public class Cart {
         return items.stream()
                 .map(CartItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public void calculateTotalAmount() {
+
     }
 }

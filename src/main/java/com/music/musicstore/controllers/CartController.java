@@ -1,7 +1,7 @@
 package com.music.musicstore.controllers;
 
-import com.music.musicstore.models.Cart;
-import com.music.musicstore.models.Customer;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.services.CartService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -29,12 +29,11 @@ public class CartController {
 
     @PostMapping("/add/{musicId}")
     public String addToCart(@PathVariable Long musicId,
-                            @RequestParam(defaultValue = "1") int quantity,
                             @AuthenticationPrincipal Customer customer) {
         if (customer == null) {
             return "redirect:/login";
         }
-        cartService.addToCart(customer, musicId, Math.max(1, quantity));
+        cartService.addToCart(customer, musicId);
         return "redirect:/cart";
     }
 

@@ -14,10 +14,14 @@
   <h1>Customer / Artist Login</h1>
   <form th:action="@{/login}" method="post">
     <label>Username</label>
-    <input type="text" name="username" required />
-    <label>Password</label>
-    <input type="password" name="password" required />
-    <button type="submit">Sign in</button>
+      <label>
+          <input type="text" userName="username" required />
+      </label>
+      <label>Password</label>
+      <label>
+          <input type="password" userName="password" required />
+      </label>
+      <button type="submit">Sign in</button>
   </form>
   <p>Don't have an account? <a th:href="@{/register}">Register</a></p>
 </div>

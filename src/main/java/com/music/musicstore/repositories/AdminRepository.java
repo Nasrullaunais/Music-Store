@@ -1,7 +1,7 @@
 package com.music.musicstore.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.music.musicstore.models.Admin;
+import com.music.musicstore.models.users.Admin;
 
 import java.util.List;
 import java.util.Optional;

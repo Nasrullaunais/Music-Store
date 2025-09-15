@@ -1,6 +1,11 @@
 package com.music.musicstore.configs;
 
-import com.music.musicstore.models.*;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.cart.CartItem;
+import com.music.musicstore.models.music.Music;
+import com.music.musicstore.models.users.Admin;
+import com.music.musicstore.models.users.Artist;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -46,13 +51,15 @@ public class DataInitializer {
                 return customerRepository.save(c);
             });
 
+            Artist artist = new Artist("Mixkit", "https://picsum.photos/seed/1/400/200");
+
             // Seed musics if repository is empty
             if (musicRepository.count() == 0) {
                 List<Music> musics = List.of(
-                        createMusic("Laugh Track", "Funny laugh", new BigDecimal("1.99"), "Comedy", "Mixkit", "Album A", "Comedy", 2020, "static/musics/mixkit-crowd-laugh-424.wav", "https://picsum.photos/seed/1/400/200"),
-                        createMusic("Sad Trombone", "Game over sound", new BigDecimal("2.49"), "SFX", "Mixkit", "Album B", "Effects", 2021, "static/musics/mixkit-sad-game-over-trombone-471.wav", "https://picsum.photos/seed/2/400/200"),
-                        createMusic("Interface Remove", "UI sound", new BigDecimal("0.99"), "SFX", "Mixkit", "Album C", "Effects", 2022, "static/musics/mixkit-software-interface-remove-2576.wav", "https://picsum.photos/seed/3/400/200"),
-                        createMusic("Cartoon Fart", "Classic gag sound", new BigDecimal("1.49"), "Comedy", "Mixkit", "Album D", "Comedy", 2019, "static/musics/mixkit-cartoon-fart-sound-2891.wav", "https://picsum.photos/seed/4/400/200")
+                        createMusic("Laugh Track", "Funny laugh", new BigDecimal("1.99"), "Comedy", artist, "Album A", "Comedy", 2020, "static/musics/mixkit-crowd-laugh-424.wav", "https://picsum.photos/seed/1/400/200"),
+                        createMusic("Sad Trombone", "Game over sound", new BigDecimal("2.49"), "SFX", artist, "Album B", "Effects", 2021, "static/musics/mixkit-sad-game-over-trombone-471.wav", "https://picsum.photos/seed/2/400/200"),
+                        createMusic("Interface Remove", "UI sound", new BigDecimal("0.99"), "SFX", artist, "Album C", "Effects", 2022, "static/musics/mixkit-software-interface-remove-2576.wav", "https://picsum.photos/seed/3/400/200"),
+                        createMusic("Cartoon Fart", "Classic gag sound", new BigDecimal("1.49"), "Comedy", artist, "Album D", "Comedy", 2019, "static/musics/mixkit-cartoon-fart-sound-2891.wav", "https://picsum.photos/seed/4/400/200")
                 );
                 musicRepository.saveAll(musics);
             }
@@ -61,7 +68,7 @@ public class DataInitializer {
             Cart cart = cartRepository.findByCustomer(customer).orElseGet(() -> cartRepository.save(new Cart(customer)));
             if (cartItemRepository.findByCart(cart).isEmpty()) {
                 musicRepository.findAll().stream().findFirst().ifPresent(m -> {
-                    CartItem item = new CartItem(m, 1);
+                    CartItem item = new CartItem(m);
                     item.setCart(cart);
                     cartItemRepository.save(item);
                 });
@@ -69,13 +76,12 @@ public class DataInitializer {
         };
     }
 
-    private static Music createMusic(String name, String desc, BigDecimal price, String category, String artist,
+    private static Music createMusic(String name, String desc, BigDecimal price, String category, Artist artist,
                                      String album, String genre, int year, String audioPath, String imageUrl) {
         Music m = new Music();
         m.setName(name);
         m.setDescription(desc);
         m.setPrice(price);
-        m.setStockQuantity(999);
         m.setCategory(category);
         m.setArtist(artist);
         m.setAlbum(album);

@@ -1,6 +1,6 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.models.Music;
+import com.music.musicstore.models.music.Music;
 import com.music.musicstore.repositories.MusicRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,8 +19,8 @@ public class MusicService {
     }
 
 
-    public Music saveMusic(Music music){
-        return musicRepository.save(music);
+    public void saveMusic(Music music){
+        musicRepository.save(music);
     }
 
     public void deleteMusic(Long id){

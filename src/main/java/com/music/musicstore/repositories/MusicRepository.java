@@ -1,6 +1,7 @@
 package com.music.musicstore.repositories;
 
-import com.music.musicstore.models.Music;
+import com.music.musicstore.models.users.Artist;
+import com.music.musicstore.models.music.Music;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +14,7 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
 
     List<Music> findByCategory(String category);
 
-    List<Music> findByArtist(String artist);
+    List<Music> findByArtist(Artist artist);
 
     List<Music> findByGenre(String genre);
 

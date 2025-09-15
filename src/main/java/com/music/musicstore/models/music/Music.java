@@ -1,5 +1,6 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.music;
 
+import com.music.musicstore.models.users.Artist;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,15 +32,14 @@ public class Music {
     @Column(nullable = false)
     private BigDecimal price;
 
-    @NotNull(message = "Stock quantity is required")
-    @Column(nullable = false)
-    private Integer stockQuantity;
-
     @Column(name = "image_url")
     private String imageUrl;
 
     @Column(name = "audio_file_path")
     private String audioFilePath;
+
+    @Column(name = "original_file_name")
+    private String OriginalFileName;
 
     @NotBlank(message = "Category is required")
     @Column(nullable = false)
@@ -52,7 +52,10 @@ public class Music {
     private LocalDateTime updatedAt;
 
     // Music-specific fields
-    private String artist;
+    @ManyToOne
+    @JoinColumn(name = "artist_id")
+    private Artist artist;
+
     private String album;
     private String genre;
     private Integer releaseYear;
@@ -62,12 +65,11 @@ public class Music {
     public Music() {
     }
 
-    public Music(String name, String description, BigDecimal price, Integer stockQuantity,
-                 String category, String artist, String album, String genre, Integer releaseYear, String audioFilePath) {
+    public Music(String name, String description, BigDecimal price,
+                 String category, Artist artist, String album, String genre, Integer releaseYear, String audioFilePath) {
         this.name = name;
         this.description = description;
         this.price = price;
-        this.stockQuantity = stockQuantity;
         this.category = category;
         this.artist = artist;
         this.album = album;
@@ -88,6 +90,14 @@ public class Music {
     }
     public void setAudioFilePath(String audioFilePath) {
         this.audioFilePath = audioFilePath;
+    }
+
+    public String getOriginalFileName() {
+        return OriginalFileName;
+    }
+
+    public void setOriginalFileName(String originalFileName) {
+        OriginalFileName = originalFileName;
     }
 
     public void setId(Long id) {
@@ -116,14 +126,6 @@ public class Music {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public void setStockQuantity(Integer stockQuantity) {
-        this.stockQuantity = stockQuantity;
     }
 
     public String getImageUrl() {
@@ -158,11 +160,11 @@ public class Music {
         this.updatedAt = updatedAt;
     }
 
-    public String getArtist() {
+    public Artist getArtist() {
         return artist;
     }
 
-    public void setArtist(String artist) {
+    public void setArtist(Artist artist) {
         this.artist = artist;
     }
 

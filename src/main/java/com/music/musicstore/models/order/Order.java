@@ -1,5 +1,7 @@
-package com.music.musicstore.models;
+package com.music.musicstore.models.order;
 
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.users.Customer;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -52,20 +54,11 @@ public class Order {
         this.totalAmount = BigDecimal.ZERO;
     }
 
-    // Helper method to add items to order
-    public void addOrderItem(OrderItem item) {
-        orderItems.add(item);
-        item.setOrder(this);
-        // Recalculate total
-        this.totalAmount = this.totalAmount.add(item.getSubtotal());
-    }
-
-    // Helper method to remove items from order
-    public void removeOrderItem(OrderItem item) {
-        orderItems.remove(item);
-        item.setOrder(null);
-        // Recalculate total
-        this.totalAmount = this.totalAmount.subtract(item.getSubtotal());
+    public Order(Cart cart) {
+        this.customer = cart.getCustomer();
+        this.orderDate = LocalDateTime.now();
+        this.status = OrderStatus.PENDING;
+        this.totalAmount = BigDecimal.ZERO;
     }
 
     // Getters and Setters

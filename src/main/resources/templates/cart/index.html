@@ -13,17 +13,15 @@
         <th>Track</th>
         <th>Artist</th>
         <th>Price</th>
-        <th>Qty</th>
         <th>Total</th>
         <th></th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="item : ${cart.items}">
-        <td th:text="${item.music.name}">Name</td>
+        <td th:text="${item.music.userName}">Name</td>
         <td th:text="${item.music.artist}">Artist</td>
         <td th:text="${#numbers.formatDecimal(item.unitPrice,1,2)}">0.00</td>
-        <td th:text="${item.quantity}">1</td>
         <td th:text="${#numbers.formatDecimal(item.totalPrice,1,2)}">0.00</td>
         <td>
             <form th:action="@{'/cart/remove/' + ${item.id}}" method="post">

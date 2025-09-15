@@ -1,13 +1,14 @@
 package com.music.musicstore.services;
 
-import com.music.musicstore.models.*;
+import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.cart.CartItem;
+import com.music.musicstore.models.music.Music;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.CartItemRepository;
 import com.music.musicstore.repositories.CartRepository;
 import com.music.musicstore.repositories.MusicRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 public class CartService {
@@ -30,23 +31,18 @@ public class CartService {
     }
 
     @Transactional
-    public Cart addToCart(Customer customer, Long musicId, int quantity) {
+    public void addToCart(Customer customer, Long musicId) {
         Cart cart = getOrCreateCart(customer);
         Music music = musicRepository.findById(musicId)
                 .orElseThrow(() -> new IllegalArgumentException("Music not found"));
 
-        Optional<CartItem> existing = cartItemRepository.findByCartAndMusic(cart, music);
-        if (existing.isPresent()) {
-            CartItem item = existing.get();
-            item.setQuantity(item.getQuantity() + quantity);
-            cartItemRepository.save(item);
-        } else {
-            CartItem item = new CartItem(music, quantity);
-            item.setCart(cart);
-            cartItemRepository.save(item);
-            cart.getItems().add(item);
-        }
-        return cartRepository.save(cart);
+
+        CartItem item = new CartItem(music);
+        item.setCart(cart);
+        cartItemRepository.save(item);
+        cart.getItems().add(item);
+
+        cartRepository.save(cart);
     }
 
     @Transactional
