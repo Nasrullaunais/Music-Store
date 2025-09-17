@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,7 @@ public class MusicApiController {
             Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Page<Music> musicPage = musicService.getAllMusic(pageRequest);
+        Page<Music> musicPage = musicService.getAllMusicPaginated(page, size);
 
         Page<MusicDto> musicDtoPage = musicPage.map(this::convertToDto);
 
@@ -76,8 +77,7 @@ public class MusicApiController {
     @GetMapping("/featured")
     public ResponseEntity<List<MusicDto>> getFeaturedMusic() {
         // Get first 8 music tracks as featured
-        PageRequest pageRequest = PageRequest.of(0, 8, Sort.by("createdAt").descending());
-        Page<Music> featuredMusic = musicService.getAllMusic(pageRequest);
+        Page<Music> featuredMusic = musicService.getAllMusicPaginated(0, 8);
         List<MusicDto> featuredMusicDto = featuredMusic.getContent().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -108,6 +108,30 @@ public class MusicApiController {
 
             // Save the music and return it
             return ResponseEntity.ok(convertToDto(musicService.saveMusic(music)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/by-artist/{artistUsername}")
+    public ResponseEntity<Page<MusicDto>> getMusicByArtist(
+            @PathVariable String artistUsername,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        try {
+            Page<Music> musicPage = musicService.getMusicByArtistPaginated(artistUsername, page, size);
+            Page<MusicDto> musicDtoPage = musicPage.map(this::convertToDto);
+            return ResponseEntity.ok(musicDtoPage);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/artists/{artistUsername}/count")
+    public ResponseEntity<Map<String, Object>> getArtistMusicCount(@PathVariable String artistUsername) {
+        try {
+            long count = musicService.countMusicByArtist(artistUsername);
+            return ResponseEntity.ok(Map.of("count", count, "artist", artistUsername));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }

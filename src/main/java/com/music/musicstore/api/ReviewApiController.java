@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -109,9 +110,9 @@ public class ReviewApiController {
     }
 
     @GetMapping("/music/{musicId}/stats")
-    public ResponseEntity<ReviewService.ReviewStats> getReviewStats(@PathVariable Long musicId) {
+    public ResponseEntity<Map<String, Object>> getReviewStats(@PathVariable Long musicId) {
         try {
-            ReviewService.ReviewStats stats = reviewService.getReviewStats(musicId);
+            Map<String, Object> stats = reviewService.getReviewStats(musicId);
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();

@@ -52,7 +52,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     // Find tickets needing attention (OPEN, URGENT, REPLIED)
     @Query("SELECT t FROM Ticket t WHERE t.status IN ('OPEN', 'URGENT', 'REPLIED') ORDER BY CASE WHEN t.status = 'URGENT' THEN 1 WHEN t.status = 'REPLIED' THEN 2 ELSE 3 END, t.id DESC")
-    List<Ticket> findTicketsNeedingAttention();
+    Page<Ticket> findTicketsNeedingAttention(int page, int size,
+                                             Pageable pageable);
 
     @Query("SELECT t FROM Ticket t WHERE t.status IN ('OPEN', 'URGENT', 'REPLIED') ORDER BY CASE WHEN t.status = 'URGENT' THEN 1 WHEN t.status = 'REPLIED' THEN 2 ELSE 3 END, t.id DESC")
     Page<Ticket> findTicketsNeedingAttention(Pageable pageable);
@@ -74,4 +75,23 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     @Query("SELECT DATE(t.id), COUNT(t) FROM Ticket t GROUP BY DATE(t.id) ORDER BY DATE(t.id) DESC")
     List<Object[]> getTicketCountByDate();
+
+    // Additional query methods for advanced filtering
+    @Query("SELECT t FROM Ticket t WHERE t.customer.username = :username")
+    List<Ticket> findByCustomerUsername(@Param("username") String username);
+
+    @Query("SELECT t FROM Ticket t WHERE t.customer.username = :username AND t.status = :status")
+    Page<Ticket> findByCustomerUsernameAndStatus(@Param("username") String username, @Param("status") String status, Pageable pageable);
+
+    @Query("SELECT t FROM Ticket t WHERE t.status IN :statuses ORDER BY t.id DESC")
+    List<Ticket> findActiveTickets(@Param("statuses") List<String> statuses);
+
+    // Find tickets by customer and status
+    Page<Ticket> findByCustomerAndStatus(Customer customer, String status, Pageable pageable);
+
+    // Find tickets by status list
+    Page<Ticket> findByStatusIn(List<String> statuses, Pageable pageable);
+
+    // Find by reply content (for assignment tracking)
+    Page<Ticket> findByReplyContainingIgnoreCase(String replyContent, Pageable pageable);
 }

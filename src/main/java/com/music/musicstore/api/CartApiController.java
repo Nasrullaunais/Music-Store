@@ -61,6 +61,7 @@ public class CartApiController {
         }
     }
 
+
     @PostMapping("/clear")
     public ResponseEntity<Void> clearCart(@AuthenticationPrincipal Customer customer) {
         if (customer == null) {

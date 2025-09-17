@@ -181,6 +181,60 @@ public class StaffApiController {
         }
     }
 
+    @GetMapping("/tickets/priority/{priority}")
+    public ResponseEntity<?> getTicketsByPriority(
+            @PathVariable String priority,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            return ResponseEntity.ok(ticketService.getTicketsByPriority(priority, page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch tickets by priority: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/tickets/{ticketId}/priority")
+    public ResponseEntity<?> updateTicketPriority(
+            @PathVariable Long ticketId,
+            @RequestBody TicketPriorityUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            ticketService.updateTicketPriority(ticketId, request.getPriority(), userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Ticket priority updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to update ticket priority: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tickets/{ticketId}/assign")
+    public ResponseEntity<?> assignTicket(
+            @PathVariable Long ticketId,
+            @RequestBody TicketAssignmentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            ticketService.assignTicket(ticketId, request.getAssigneeUsername(), userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Ticket assigned successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to assign ticket: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/assigned-to-me")
+    public ResponseEntity<?> getMyAssignedTickets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            return ResponseEntity.ok(ticketService.getTicketsAssignedTo(userDetails.getUsername(), page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch assigned tickets: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/analytics/website")
     public ResponseEntity<?> getWebsiteAnalytics(
             @RequestParam(required = false) LocalDate startDate,
@@ -255,6 +309,20 @@ public class StaffApiController {
 
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+    }
+
+    public static class TicketPriorityUpdateRequest {
+        private String priority;
+
+        public String getPriority() { return priority; }
+        public void setPriority(String priority) { this.priority = priority; }
+    }
+
+    public static class TicketAssignmentRequest {
+        private String assigneeUsername;
+
+        public String getAssigneeUsername() { return assigneeUsername; }
+        public void setAssigneeUsername(String assigneeUsername) { this.assigneeUsername = assigneeUsername; }
     }
 
     public static class WebsiteAnalytics {

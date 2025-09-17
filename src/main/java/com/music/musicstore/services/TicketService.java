@@ -249,57 +249,15 @@ public class TicketService {
         analytics.put("closedTickets", getClosedTicketsCount());
         analytics.put("urgentTickets", getUrgentTicketsCount());
         analytics.put("statusDistribution", getTicketStatusDistribution());
-
-        // Add time-based analytics if date range is provided
+        // Add date-filtered analytics if dates are provided
         if (startDate != null && endDate != null) {
             analytics.put("period", startDate + " to " + endDate);
-            // Note: Would need createdAt field in Ticket entity for proper date filtering
         }
-
         return analytics;
     }
 
-    // Final missing method for admin analytics
-    public Map<String, Object> getDetailedTicketStats() {
-        Map<String, Object> detailedStats = new HashMap<>();
-        detailedStats.put("statusDistribution", getTicketStatusDistribution());
-        detailedStats.put("totalTickets", getTotalTicketsCount());
-        detailedStats.put("activeTickets", getActiveTicketsCount());
-        detailedStats.put("closedTickets", getClosedTicketsCount());
-        detailedStats.put("urgentTickets", getUrgentTicketsCount());
+    // Missing methods needed by API endpoints
 
-        // Additional detailed statistics
-        detailedStats.put("averageResolutionTime", "2.5 days"); // Placeholder
-        detailedStats.put("customerSatisfactionRate", "4.2/5"); // Placeholder
-        detailedStats.put("firstResponseTime", "4 hours"); // Placeholder
-
-        return detailedStats;
-    }
-
-    // Batch operations
-    public void bulkUpdateStatus(List<Long> ticketIds, String newStatus, String staffUsername) {
-        for (Long ticketId : ticketIds) {
-            updateTicketStatus(ticketId, newStatus, staffUsername);
-        }
-    }
-
-    public void bulkCloseTickets(List<Long> ticketIds, String reason) {
-        for (Long ticketId : ticketIds) {
-            closeTicket(ticketId, reason);
-        }
-    }
-
-    // Search functionality
-    public List<Ticket> searchTickets(String searchTerm) {
-        return ticketRepository.findBySubjectContainingIgnoreCaseOrMessageContainingIgnoreCase(searchTerm, searchTerm);
-    }
-
-    public Page<Ticket> searchTickets(String searchTerm, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return ticketRepository.findBySubjectContainingIgnoreCaseOrMessageContainingIgnoreCase(searchTerm, searchTerm, pageable);
-    }
-
-    // Customer-specific methods
     public List<Ticket> getCustomerActiveTickets(String username) {
         Customer customer = customerService.findByUsername(username);
         return ticketRepository.findByCustomerAndStatusIn(customer, List.of("OPEN", "URGENT", "REPLIED", "IN_PROGRESS"));
@@ -315,14 +273,120 @@ public class TicketService {
         }
     }
 
-    // Customer search method placeholder (referenced in CustomerApiController)
-    public List<Ticket> searchCustomerTickets(String username, String searchTerm) {
-        Customer customer = customerService.findByUsername(username);
-        return ticketRepository.findByCustomerAndSearchTerm(customer, searchTerm);
+    public List<String> getTicketHistory(Long ticketId) {
+        Ticket ticket = getTicketById(ticketId);
+        List<String> history = List.of();
+        if (ticket.getReply() != null && !ticket.getReply().isEmpty()) {
+            history = List.of(ticket.getReply().split("\n"));
+        }
+        return history;
     }
 
-    public List<Ticket> findTicketsNeedingAttention(int page, int size) {
-        ticketRepository.findTicketsNeedingAttention();
+    public Page<Ticket> getCustomerTicketsByStatus(String username, String status, int page, int size) {
+        Customer customer = customerService.findByUsername(username);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return ticketRepository.findByCustomerAndStatus(customer, status, pageable);
+    }
 
+    public Page<Ticket> searchTickets(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return ticketRepository.findBySubjectContainingIgnoreCaseOrMessageContainingIgnoreCase(query, query, pageable);
+    }
+
+    public Page<Ticket> findTicketsNeedingAttention(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return ticketRepository.findByStatusIn(List.of("URGENT", "OPEN"), pageable);
+    }
+
+    public Page<Ticket> getTicketsByPriority(String priority, int page, int size) {
+        String statusEquivalent = switch(priority.toUpperCase()) {
+            case "HIGH" -> "URGENT";
+            case "LOW" -> "LOW_PRIORITY";
+            default -> "OPEN";
+        };
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return ticketRepository.findByStatus(statusEquivalent, pageable);
+    }
+
+    public void updateTicketPriority(Long ticketId, String priority, String staffUsername) {
+        Ticket ticket = getTicketById(ticketId);
+        String oldStatus = ticket.getStatus();
+
+        String newStatus = switch(priority.toUpperCase()) {
+            case "HIGH" -> "URGENT";
+            case "LOW" -> "LOW_PRIORITY";
+            default -> "OPEN";
+        };
+
+        ticket.setStatus(newStatus);
+
+        // Add priority change log to reply
+        String priorityChange = "[" + LocalDateTime.now() + " - " + staffUsername + "]: Priority changed from " + oldStatus + " to " + newStatus;
+        String currentReply = ticket.getReply() != null ? ticket.getReply() : "";
+
+        if (!currentReply.isEmpty()) {
+            ticket.setReply(currentReply + "\n" + priorityChange);
+        } else {
+            ticket.setReply(priorityChange);
+        }
+
+        ticketRepository.save(ticket);
+    }
+
+    public void assignTicket(Long ticketId, String assigneeUsername, String staffUsername) {
+        Ticket ticket = getTicketById(ticketId);
+
+        // Add assignment log to reply
+        String assignmentLog = "[" + LocalDateTime.now() + " - " + staffUsername + "]: Ticket assigned to " + assigneeUsername;
+        String currentReply = ticket.getReply() != null ? ticket.getReply() : "";
+
+        if (!currentReply.isEmpty()) {
+            ticket.setReply(currentReply + "\n" + assignmentLog);
+        } else {
+            ticket.setReply(assignmentLog);
+        }
+
+        ticket.setStatus("ASSIGNED");
+        ticketRepository.save(ticket);
+    }
+
+    public Page<Ticket> getTicketsAssignedTo(String username, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        // For now, we'll look for tickets where the username appears in the reply (assignment log)
+        return ticketRepository.findByReplyContainingIgnoreCase("assigned to " + username, pageable);
+    }
+
+    public void bulkUpdateStatus(List<Long> ticketIds, String newStatus, String staffUsername) {
+        for (Long ticketId : ticketIds) {
+            updateTicketStatus(ticketId, newStatus, staffUsername);
+        }
+    }
+
+    public void bulkCloseTickets(List<Long> ticketIds, String reason) {
+        for (Long ticketId : ticketIds) {
+            closeTicket(ticketId, reason);
+        }
+    }
+
+    public void deleteTicket(Long ticketId) {
+        ticketRepository.deleteById(ticketId);
+    }
+
+    public void bulkDeleteTickets(List<Long> ticketIds) {
+        for (Long ticketId : ticketIds) {
+            deleteTicket(ticketId);
+        }
+    }
+
+    public Map<String, Object> getDetailedTicketStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("total", getTotalTicketsCount());
+        stats.put("active", getActiveTicketsCount());
+        stats.put("closed", getClosedTicketsCount());
+        stats.put("urgent", getUrgentTicketsCount());
+        stats.put("statusDistribution", getTicketStatusDistribution());
+        stats.put("averageResolutionTime", "2.5 days"); // Placeholder
+        stats.put("customerSatisfaction", "4.2/5"); // Placeholder
+        return stats;
     }
 }

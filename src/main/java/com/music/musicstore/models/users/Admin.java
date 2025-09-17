@@ -32,6 +32,12 @@ public class Admin implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = true)
+    private String firstName;
+
+    @Column(nullable = true)
+    private String lastName;
+
     @Column(nullable = false)
     private String role = "ROLE_ADMIN";
 
@@ -81,6 +87,22 @@ public class Admin implements UserDetails {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getRole() {

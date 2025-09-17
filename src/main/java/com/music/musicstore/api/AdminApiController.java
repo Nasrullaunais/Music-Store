@@ -146,7 +146,8 @@ public class AdminApiController {
             @PathVariable Long musicId,
             @RequestBody MusicStatusUpdateRequest request) {
         try {
-            return ResponseEntity.ok(musicService.updateMusicStatus(musicId, request.getStatus()));
+            musicService.updateMusicStatus(musicId, request.getStatus());
+            return ResponseEntity.ok(new SuccessResponse("Music status updated successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update music status: " + e.getMessage()));

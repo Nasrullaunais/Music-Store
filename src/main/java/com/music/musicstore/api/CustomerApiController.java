@@ -383,6 +383,58 @@ public class CustomerApiController {
         }
     }
 
+    @PostMapping("/tickets/{ticketId}/reply")
+    public ResponseEntity<?> replyToTicket(
+            @PathVariable Long ticketId,
+            @RequestBody TicketReplyRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // Verify customer owns the ticket
+            if (!ticketService.canCustomerViewTicket(ticketId, userDetails.getUsername())) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("You can only reply to your own tickets"));
+            }
+
+            ticketService.replyToTicket(ticketId, request.getMessage(), userDetails.getUsername());
+            return ResponseEntity.ok(new SuccessResponse("Reply sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to reply to ticket: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/{ticketId}/history")
+    public ResponseEntity<?> getTicketHistory(
+            @PathVariable Long ticketId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            // Verify customer owns the ticket
+            if (!ticketService.canCustomerViewTicket(ticketId, userDetails.getUsername())) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("You can only view your own ticket history"));
+            }
+
+            return ResponseEntity.ok(ticketService.getTicketHistory(ticketId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch ticket history: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/status/{status}")
+    public ResponseEntity<?> getTicketsByStatus(
+            @PathVariable String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            return ResponseEntity.ok(ticketService.getCustomerTicketsByStatus(userDetails.getUsername(), status, page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch tickets by status: " + e.getMessage()));
+        }
+    }
+
     // DTOs for requests
     public static class PlaylistCreateRequest {
         private String name;
@@ -419,6 +471,13 @@ public class CustomerApiController {
 
         public String getPriority() { return priority; }
         public void setPriority(String priority) { this.priority = priority; }
+    }
+
+    public static class TicketReplyRequest {
+        private String message;
+
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
     }
 
     public static class ErrorResponse {
