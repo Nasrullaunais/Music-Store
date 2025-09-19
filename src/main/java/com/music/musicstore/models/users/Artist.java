@@ -1,6 +1,5 @@
 package com.music.musicstore.models.users;
 
-import com.music.musicstore.models.music.Music;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -41,8 +40,7 @@ public class Artist implements UserDetails {
     @Column(nullable = true)
     private String artistName;
 
-    @OneToMany(mappedBy = "artist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Music> music;
+    // Music collection relationship removed - use MusicService.getMusicByArtist(username) instead
 
     @Column(nullable = false)
     private String role = "ROLE_ARTIST";
@@ -80,8 +78,6 @@ public class Artist implements UserDetails {
     public String getArtistName() { return artistName; }
     public void setArtistName(String artistName) { this.artistName = artistName; }
 
-    public List<Music> getMusic() { return music; }
-    public void setMusic(List<Music> music) { this.music = music; }
 
     public String getCover() { return cover; }
     public void setCover(String cover) { this.cover = cover; }

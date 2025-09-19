@@ -4,6 +4,7 @@ import com.music.musicstore.dto.MusicDto;
 import com.music.musicstore.models.music.Music;
 import com.music.musicstore.services.MusicService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -11,10 +12,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -53,11 +61,7 @@ public class MusicApiController {
     @GetMapping("/{id}")
     public ResponseEntity<MusicDto> getMusicById(@PathVariable Long id) {
         Optional<Music> music = musicService.getMusicById(id);
-        if (music.isPresent()) {
-            return ResponseEntity.ok(convertToDto(music.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return music.map(value -> ResponseEntity.ok(convertToDto(value))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/genres")
@@ -92,23 +96,46 @@ public class MusicApiController {
             @RequestParam("price") String price,
             @RequestParam("genre") String genre,
             @RequestParam("artist") String artist,
-            @RequestParam("albumId") String albumId,
+            @RequestParam(value = "albumName", required = false) String albumName,
             @RequestParam("releaseYear") String releaseYear) {
 
         try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Create upload directory if it doesn't exist
+            String uploadDir = "src/main/resources/static/uploads/music/";
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String uniqueFilename = UUID.randomUUID().toString() + "_" + originalFilename;
+            Path filePath = uploadPath.resolve(uniqueFilename);
+
+            // Save file to disk
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
             // Create a new Music entity
             Music music = new Music();
             music.setName(name);
             music.setDescription(description);
             music.setPrice(new BigDecimal(price));
             music.setCategory(genre);
-            // Note: albumId should be used to find and set the Album entity
-            // For now, we'll leave it null and set it properly later
             music.setGenre(genre);
+            music.setArtistUsername(artist);
+            music.setAlbumName(albumName);
             music.setReleaseYear(Integer.parseInt(releaseYear));
+            music.setAudioFilePath("/uploads/music/" + uniqueFilename);
+            music.setOriginalFileName(originalFilename);
 
             // Save the music and return it
             return ResponseEntity.ok(convertToDto(musicService.saveMusic(music)));
+        } catch (IOException e) {
+            return ResponseEntity.status(500).build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
@@ -147,8 +174,8 @@ public class MusicApiController {
                 music.getImageUrl(),
                 music.getAudioFilePath(),
                 music.getCategory(),
-                music.getArtist() != null ? music.getArtist().getUserName() : "Unknown Artist",
-                music.getAlbum() != null ? music.getAlbum().getTitle() : "Unknown Album",
+                music.getArtistUsername() != null ? music.getArtistUsername() : "Unknown Artist",
+                music.getAlbumName() != null ? music.getAlbumName() : "Unknown Album",
                 music.getGenre(),
                 music.getReleaseYear(),
                 music.getCreatedAt()

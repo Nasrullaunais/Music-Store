@@ -83,10 +83,10 @@ public class DataInitializer {
         m.setDescription(desc);
         m.setPrice(price);
         m.setCategory(category);
-        m.setArtist(artist);
+        m.setArtistUsername(artist.getUserName());
         // Note: Album field now expects Album entity, not String
         // For demo purposes, we'll leave it null since the seeding is commented out
-        // m.setAlbum(album); // This would need an Album entity
+        m.setAlbumName(albumTitle);
         m.setGenre(genre);
         m.setReleaseYear(year);
         m.setImageUrl(imageUrl);

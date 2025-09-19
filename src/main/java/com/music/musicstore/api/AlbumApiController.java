@@ -90,17 +90,11 @@ public class AlbumApiController {
     @PostMapping
     public ResponseEntity<AlbumDto> createAlbum(@RequestBody CreateAlbumRequest request) {
         try {
-            // Find artist by username
-            Optional<Artist> artistOpt = artistRepository.findByUserName(request.getArtistUsername());
-            if (artistOpt.isEmpty()) {
-                return ResponseEntity.badRequest().build();
-            }
-
             // Create new album
             Album album = new Album();
             album.setTitle(request.getTitle());
             album.setDescription(request.getDescription());
-            album.setArtist(artistOpt.get());
+            album.setArtistUsername(request.getArtistUsername());
             album.setGenre(request.getGenre());
             album.setPrice(request.getPrice());
             album.setCoverImageUrl(request.getCoverImageUrl());
@@ -132,10 +126,7 @@ public class AlbumApiController {
 
             // If artist is being updated
             if (request.getArtistUsername() != null) {
-                Optional<Artist> artistOpt = artistRepository.findByUserName(request.getArtistUsername());
-                if (artistOpt.isPresent()) {
-                    albumDetails.setArtist(artistOpt.get());
-                }
+                albumDetails.setArtistUsername(request.getArtistUsername());
             }
 
             Album updatedAlbum = albumService.updateAlbum(id, albumDetails);
@@ -218,14 +209,14 @@ public class AlbumApiController {
                 album.getId(),
                 album.getTitle(),
                 album.getDescription(),
-                album.getArtist() != null ? album.getArtist().getUserName() : "Unknown Artist",
+                album.getArtistUsername() != null ? album.getArtistUsername() : "Unknown Artist",
                 album.getGenre(),
                 album.getPrice(),
                 album.getCoverImageUrl(),
                 album.getReleaseDate(),
                 album.getCreatedAt(),
                 album.getUpdatedAt(),
-                album.getTracks() != null ? album.getTracks().size() : 0
+                0  // Track count removed as tracks relationship was removed
         );
     }
 

@@ -151,12 +151,8 @@ public class ArtistApiController {
         dto.setName(music.getName());
         dto.setGenre(music.getGenre());
         dto.setPrice(music.getPrice());
-        // Use the helper method to get artist name
-        if (music.getArtist() != null) {
-            dto.setArtist(music.getArtist().getUserName());
-        } else {
-            dto.setArtist(music.getCategory()); // Fallback
-        }
+        // Use the artist username
+        dto.setArtist(music.getArtistUsername() != null ? music.getArtistUsername() : "Unknown Artist");
         return dto;
     }
 

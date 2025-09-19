@@ -1,9 +1,7 @@
 package com.music.musicstore.services;
 
 import com.music.musicstore.models.music.Album;
-import com.music.musicstore.models.users.Artist;
 import com.music.musicstore.repositories.AlbumRepository;
-import com.music.musicstore.repositories.ArtistRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,12 +18,10 @@ import java.util.Optional;
 public class AlbumService {
 
     private final AlbumRepository albumRepository;
-    private final ArtistRepository artistRepository;
 
     @Autowired
-    public AlbumService(AlbumRepository albumRepository, ArtistRepository artistRepository) {
+    public AlbumService(AlbumRepository albumRepository) {
         this.albumRepository = albumRepository;
-        this.artistRepository = artistRepository;
     }
 
     // Create new album
@@ -85,9 +81,9 @@ public class AlbumService {
         return albumRepository.countByArtistUsername(artistUsername);
     }
 
-    // Get albums by artist
-    public List<Album> getAlbumsByArtist(Artist artist) {
-        return albumRepository.findByArtist(artist);
+    // Get albums by artist (using username)
+    public List<Album> getAlbumsByArtist(String artistUsername) {
+        return albumRepository.findByArtistUsername(artistUsername);
     }
 
     // Get albums by genre (non-paginated)
@@ -106,8 +102,8 @@ public class AlbumService {
             album.setPrice(albumDetails.getPrice());
             album.setCoverImageUrl(albumDetails.getCoverImageUrl());
             album.setReleaseDate(albumDetails.getReleaseDate());
-            if (albumDetails.getArtist() != null) {
-                album.setArtist(albumDetails.getArtist());
+            if (albumDetails.getArtistUsername() != null) {
+                album.setArtistUsername(albumDetails.getArtistUsername());
             }
             return albumRepository.save(album);
         }
@@ -128,8 +124,8 @@ public class AlbumService {
         return albumRepository.existsById(id);
     }
 
-    // Get albums by artist and genre
-    public List<Album> getAlbumsByArtistAndGenre(Artist artist, String genre) {
-        return albumRepository.findByArtistAndGenre(artist, genre);
+    // Get albums by artist username and genre
+    public List<Album> getAlbumsByArtistAndGenre(String artistUsername, String genre) {
+        return albumRepository.findByArtistUsernameAndGenre(artistUsername, genre);
     }
 }

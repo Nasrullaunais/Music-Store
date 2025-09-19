@@ -208,7 +208,7 @@ public class MusicService {
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<Music> musicPage = musicRepository.findByNameContainingIgnoreCaseOrArtistContainingIgnoreCase(query, query, pageable);
+            Page<Music> musicPage = musicRepository.findByNameContainingIgnoreCaseOrArtistUsernameContainingIgnoreCase(query, query, pageable);
             logger.info("Successfully searched music with query '{}': {} items found on page {}", query, musicPage.getNumberOfElements(), page);
             return musicPage;
         } catch (Exception e) {
@@ -426,21 +426,20 @@ public class MusicService {
     // Add paginated version for better performance with large datasets
     public Page<Music> getMusicByArtistPaginated(String artistUsername, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        // We'll need to add this method to the repository
-        return musicRepository.findByArtist_UserName(artistUsername, pageable);
+        return musicRepository.findByArtistUsername(artistUsername, pageable);
     }
 
     // Enhanced method for artist-specific operations
     public List<Music> getArtistMusicWithStatus(String artistUsername, String status) {
         // This would filter by status if the Music entity has a status field
-        List<Music> allMusic = musicRepository.findByArtist_UserName(artistUsername);
+        List<Music> allMusic = musicRepository.findByArtistUsername(artistUsername);
         // For now, return all music since status filtering isn't implemented
         return allMusic;
     }
 
     // Count methods for artist analytics
     public long countMusicByArtist(String artistUsername) {
-        return musicRepository.countByArtist_UserName(artistUsername);
+        return musicRepository.countByArtistUsername(artistUsername);
     }
 
     public Page<Music> getMusicByGenrePaginated(String genre, int page, int size) {
@@ -509,7 +508,7 @@ public class MusicService {
         Map<String, Object> analytics = new HashMap<>();
 
         // Get artist-specific analytics
-        analytics.put("totalTracks", musicRepository.countByArtist_UserName(username));
+        analytics.put("totalTracks", musicRepository.countByArtistUsername(username));
         analytics.put("totalSales", 0); // Placeholder - would need order integration
         analytics.put("totalRevenue", 0.0); // Placeholder
         analytics.put("topTracks", List.of()); // Placeholder
@@ -527,6 +526,6 @@ public class MusicService {
     }
 
     public List<Music> getMusicByArtist(String username) {
-        return musicRepository.findByArtist_UserName(username);
+        return musicRepository.findByArtistUsername(username);
     }
 }

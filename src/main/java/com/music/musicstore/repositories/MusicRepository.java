@@ -1,6 +1,5 @@
 package com.music.musicstore.repositories;
 
-import com.music.musicstore.models.users.Artist;
 import com.music.musicstore.models.music.Music;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +15,7 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
 
     List<Music> findByCategory(String category);
 
-    List<Music> findByArtist(Artist artist);
+    List<Music> findByArtistUsername(String artistUsername);
 
     List<Music> findByGenre(String genre);
 
@@ -24,27 +23,24 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
 
     Page<Music> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-    Page<Music> findByArtistContainingIgnoreCase(String artist, Pageable pageable);
+    Page<Music> findByArtistUsernameContainingIgnoreCase(String artistUsername, Pageable pageable);
 
     Page<Music> findByGenreContainingIgnoreCase(String genre, Pageable pageable);
 
     Page<Music> findByCategoryContainingIgnoreCase(String category, Pageable pageable);
 
     // Combined search
-    Page<Music> findByNameContainingIgnoreCaseOrArtistContainingIgnoreCaseOrGenreContainingIgnoreCase(
-            String name, String artist, String genre, Pageable pageable);
+    Page<Music> findByNameContainingIgnoreCaseOrArtistUsernameContainingIgnoreCaseOrGenreContainingIgnoreCase(
+            String name, String artistUsername, String genre, Pageable pageable);
 
     // Missing methods needed by MusicService
 
     // Search by title or artist (for CustomerApiController search)
-    Page<Music> findByNameContainingIgnoreCaseOrArtistContainingIgnoreCase(
-            String name, String artist, Pageable pageable);
-
-    // Find by artist name (String instead of Artist entity)
-    List<Music> findByArtist_UserName(String artistUsername);
+    Page<Music> findByNameContainingIgnoreCaseOrArtistUsernameContainingIgnoreCase(
+            String name, String artistUsername, Pageable pageable);
 
     // Paginated version for better performance
-    Page<Music> findByArtist_UserName(String artistUsername, Pageable pageable);
+    Page<Music> findByArtistUsername(String artistUsername, Pageable pageable);
 
     // Find by genre with pagination
     Page<Music> findByGenre(String genre, Pageable pageable);
@@ -76,5 +72,5 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
     // Count methods for analytics
     long countByGenre(String genre);
     long countByCategory(String category);
-    long countByArtist_UserName(String artistUsername);
+    long countByArtistUsername(String artistUsername);
 }

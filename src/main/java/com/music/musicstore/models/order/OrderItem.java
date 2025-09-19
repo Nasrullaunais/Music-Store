@@ -49,7 +49,7 @@ public class OrderItem {
         this.music = cartItem.getMusic();
         this.unitPrice = cartItem.getUnitPrice();
         this.musicTitle = cartItem.getMusic().getName();
-        this.artistName = cartItem.getMusic().getArtist().getUserName();
+        this.artistName = cartItem.getMusic().getArtistUsername();
     }
 
     // Calculate subtotal

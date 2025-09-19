@@ -27,9 +27,9 @@ public class Album {
     @Column(length = 1000)
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "artist_id")
-    private Artist artist;
+    @NotBlank(message = "Artist username is required")
+    @Column(name = "artist_username", nullable = false)
+    private String artistUsername;
 
     @NotBlank(message = "Genre is required")
     @Column(nullable = false)
@@ -52,19 +52,17 @@ public class Album {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relationship with Music tracks
-    @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Music> tracks;
+    // Relationship with Music tracks - removed to avoid circular reference issues
 
     // Default constructor
     public Album() {}
 
     // Constructor
-    public Album(String title, String description, Artist artist, String genre,
+    public Album(String title, String description, String artistUsername, String genre,
                 BigDecimal price, String coverImageUrl, LocalDateTime releaseDate) {
         this.title = title;
         this.description = description;
-        this.artist = artist;
+        this.artistUsername = artistUsername;
         this.genre = genre;
         this.price = price;
         this.coverImageUrl = coverImageUrl;
@@ -98,12 +96,12 @@ public class Album {
         this.description = description;
     }
 
-    public Artist getArtist() {
-        return artist;
+    public String getArtistUsername() {
+        return artistUsername;
     }
 
-    public void setArtist(Artist artist) {
-        this.artist = artist;
+    public void setArtistUsername(String artistUsername) {
+        this.artistUsername = artistUsername;
     }
 
     public String getGenre() {
@@ -154,13 +152,7 @@ public class Album {
         this.updatedAt = updatedAt;
     }
 
-    public List<Music> getTracks() {
-        return tracks;
-    }
-
-    public void setTracks(List<Music> tracks) {
-        this.tracks = tracks;
-    }
+    // Tracks methods removed - use separate service to get tracks by album name
 
     @PrePersist
     protected void onCreate() {

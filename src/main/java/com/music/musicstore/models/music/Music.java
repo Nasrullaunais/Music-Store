@@ -1,6 +1,5 @@
 package com.music.musicstore.models.music;
 
-import com.music.musicstore.models.users.Artist;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -52,13 +51,12 @@ public class Music {
     private LocalDateTime updatedAt;
 
     // Music-specific fields
-    @ManyToOne
-    @JoinColumn(name = "artist_id")
-    private Artist artist;
+    @NotBlank(message = "Artist username is required")
+    @Column(name = "artist_username", nullable = false)
+    private String artistUsername;
 
-    @ManyToOne
-    @JoinColumn(name = "album_id")
-    private Album album;
+    @Column(name = "album_name")
+    private String albumName;
 
     private String genre;
     private Integer releaseYear;
@@ -69,13 +67,13 @@ public class Music {
     }
 
     public Music(String name, String description, BigDecimal price,
-                 String category, Artist artist, Album album, String genre, Integer releaseYear, String audioFilePath) {
+                 String category, String artistUsername, String albumName, String genre, Integer releaseYear, String audioFilePath) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.category = category;
-        this.artist = artist;
-        this.album = album;
+        this.artistUsername = artistUsername;
+        this.albumName = albumName;
         this.genre = genre;
         this.releaseYear = releaseYear;
         this.audioFilePath = audioFilePath;
@@ -163,20 +161,20 @@ public class Music {
         this.updatedAt = updatedAt;
     }
 
-    public Artist getArtist() {
-        return artist;
+    public String getArtistUsername() {
+        return artistUsername;
     }
 
-    public void setArtist(Artist artist) {
-        this.artist = artist;
+    public void setArtistUsername(String artistUsername) {
+        this.artistUsername = artistUsername;
     }
 
-    public Album getAlbum() {
-        return album;
+    public String getAlbumName() {
+        return albumName;
     }
 
-    public void setAlbum(Album album) {
-        this.album = album;
+    public void setAlbumName(String albumName) {
+        this.albumName = albumName;
     }
 
     public String getGenre() {
