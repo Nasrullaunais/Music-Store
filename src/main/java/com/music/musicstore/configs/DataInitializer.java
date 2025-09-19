@@ -77,14 +77,16 @@ public class DataInitializer {
 //    }
 
     private static Music createMusic(String name, String desc, BigDecimal price, String category, Artist artist,
-                                     String album, String genre, int year, String audioPath, String imageUrl) {
+                                     String albumTitle, String genre, int year, String audioPath, String imageUrl) {
         Music m = new Music();
         m.setName(name);
         m.setDescription(desc);
         m.setPrice(price);
         m.setCategory(category);
         m.setArtist(artist);
-        m.setAlbum(album);
+        // Note: Album field now expects Album entity, not String
+        // For demo purposes, we'll leave it null since the seeding is commented out
+        // m.setAlbum(album); // This would need an Album entity
         m.setGenre(genre);
         m.setReleaseYear(year);
         m.setImageUrl(imageUrl);

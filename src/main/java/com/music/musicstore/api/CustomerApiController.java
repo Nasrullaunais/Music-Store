@@ -21,8 +21,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customer")
-@CrossOrigin(origins = "http://localhost:3000")
 @PreAuthorize("hasRole('CUSTOMER')")
+@CrossOrigin(origins = "http://localhost:5173")
 public class CustomerApiController {
 
     @Autowired

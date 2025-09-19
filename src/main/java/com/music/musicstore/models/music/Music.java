@@ -56,7 +56,10 @@ public class Music {
     @JoinColumn(name = "artist_id")
     private Artist artist;
 
-    private String album;
+    @ManyToOne
+    @JoinColumn(name = "album_id")
+    private Album album;
+
     private String genre;
     private Integer releaseYear;
 
@@ -66,7 +69,7 @@ public class Music {
     }
 
     public Music(String name, String description, BigDecimal price,
-                 String category, Artist artist, String album, String genre, Integer releaseYear, String audioFilePath) {
+                 String category, Artist artist, Album album, String genre, Integer releaseYear, String audioFilePath) {
         this.name = name;
         this.description = description;
         this.price = price;
@@ -168,11 +171,11 @@ public class Music {
         this.artist = artist;
     }
 
-    public String getAlbum() {
+    public Album getAlbum() {
         return album;
     }
 
-    public void setAlbum(String album) {
+    public void setAlbum(Album album) {
         this.album = album;
     }
 

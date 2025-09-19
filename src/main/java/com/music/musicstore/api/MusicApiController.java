@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/music")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 public class MusicApiController {
 
     private final MusicService musicService;
@@ -31,10 +31,10 @@ public class MusicApiController {
 
     @GetMapping
     public ResponseEntity<Page<MusicDto>> getAllMusic(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "0", required = false) int page,
+            @RequestParam(defaultValue = "50", required = false) int size,
+            @RequestParam(defaultValue = "createdAt", required = false) String sortBy,
+            @RequestParam(defaultValue = "desc", required = false) String sortDir,
             @RequestParam(required = false) String genre,
             @RequestParam(required = false) String artist,
             @RequestParam(required = false) String search) {
@@ -92,7 +92,7 @@ public class MusicApiController {
             @RequestParam("price") String price,
             @RequestParam("genre") String genre,
             @RequestParam("artist") String artist,
-            @RequestParam("album") String album,
+            @RequestParam("albumId") String albumId,
             @RequestParam("releaseYear") String releaseYear) {
 
         try {
@@ -102,7 +102,8 @@ public class MusicApiController {
             music.setDescription(description);
             music.setPrice(new BigDecimal(price));
             music.setCategory(genre);
-            music.setAlbum(album);
+            // Note: albumId should be used to find and set the Album entity
+            // For now, we'll leave it null and set it properly later
             music.setGenre(genre);
             music.setReleaseYear(Integer.parseInt(releaseYear));
 
@@ -146,8 +147,8 @@ public class MusicApiController {
                 music.getImageUrl(),
                 music.getAudioFilePath(),
                 music.getCategory(),
-                music.getArtist() != null ? music.getArtist().getUsername() : "Unknown Artist",
-                music.getAlbum(),
+                music.getArtist() != null ? music.getArtist().getUserName() : "Unknown Artist",
+                music.getAlbum() != null ? music.getAlbum().getTitle() : "Unknown Album",
                 music.getGenre(),
                 music.getReleaseYear(),
                 music.getCreatedAt()

@@ -20,8 +20,8 @@ import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/staff")
-@CrossOrigin(origins = "http://localhost:3000")
 @PreAuthorize("hasRole('STAFF')")
+@CrossOrigin(origins = "http://localhost:5173")
 public class StaffApiController {
 
     @Autowired

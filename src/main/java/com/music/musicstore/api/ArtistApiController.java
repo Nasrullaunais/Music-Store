@@ -18,8 +18,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/artist")
-@CrossOrigin(origins = "http://localhost:3000")
 @PreAuthorize("hasRole('ARTIST')")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ArtistApiController {
 
     @Autowired

@@ -30,6 +30,7 @@ public class StaffService {
         logger.info("StaffService initialized successfully");
     }
 
+
     public UserDetails loadUserByUsername(String username) {
         logger.debug("Loading staff by username: {}", username);
 

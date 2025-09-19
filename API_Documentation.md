@@ -262,6 +262,351 @@ Content-Type: multipart/form-data
 }
 ```
 
+## Album Endpoints
+
+### 1. Get All Albums
+**Endpoint:** `GET /api/albums`
+
+**Description:** Get paginated list of all albums with filtering options
+
+**Query Parameters:**
+- `page` (optional, default: 0) - Page number
+- `size` (optional, default: 12) - Page size
+- `sortBy` (optional, default: "createdAt") - Sort field (createdAt, title, price, etc.)
+- `sortDir` (optional, default: "desc") - Sort direction (asc or desc)
+- `genre` (optional) - Filter by genre
+- `artist` (optional) - Filter by artist username
+- `search` (optional) - Search in album titles
+
+**Request Headers:**
+```
+Authorization: Bearer JWT_TOKEN (optional for public access)
+```
+
+**Success Response (200):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "title": "Album Title",
+      "description": "Album description",
+      "artist": "artist_username",
+      "genre": "Pop",
+      "price": 12.99,
+      "coverImageUrl": "https://example.com/cover.jpg",
+      "releaseDate": "2024-01-01T00:00:00",
+      "createdAt": "2024-01-01T10:00:00",
+      "updatedAt": "2024-01-01T10:00:00",
+      "trackCount": 10
+    }
+  ],
+  "totalElements": 50,
+  "totalPages": 5,
+  "size": 12,
+  "number": 0
+}
+```
+
+### 2. Get Album by ID
+**Endpoint:** `GET /api/albums/{id}`
+
+**Description:** Get specific album by ID
+
+**Path Parameters:**
+- `id` (required) - Album ID
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "title": "Album Title",
+  "description": "Album description",
+  "artist": "artist_username",
+  "genre": "Pop",
+  "price": 12.99,
+  "coverImageUrl": "https://example.com/cover.jpg",
+  "releaseDate": "2024-01-01T00:00:00",
+  "createdAt": "2024-01-01T10:00:00",
+  "updatedAt": "2024-01-01T10:00:00",
+  "trackCount": 10
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "message": "Album not found"
+}
+```
+
+### 3. Get Album with Tracks
+**Endpoint:** `GET /api/albums/{id}/with-tracks`
+
+**Description:** Get album by ID with all associated tracks loaded
+
+**Path Parameters:**
+- `id` (required) - Album ID
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "title": "Album Title",
+  "description": "Album description",
+  "artist": "artist_username",
+  "genre": "Pop",
+  "price": 12.99,
+  "coverImageUrl": "https://example.com/cover.jpg",
+  "releaseDate": "2024-01-01T00:00:00",
+  "createdAt": "2024-01-01T10:00:00",
+  "updatedAt": "2024-01-01T10:00:00",
+  "trackCount": 10
+}
+```
+
+### 4. Create Album (Artists Only)
+**Endpoint:** `POST /api/albums`
+
+**Description:** Create a new album (requires ARTIST role)
+
+**Request Headers:**
+```
+Authorization: Bearer JWT_TOKEN
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "string (required)",
+  "description": "string (optional)",
+  "artistUsername": "string (required)",
+  "genre": "string (required)",
+  "price": 12.99,
+  "coverImageUrl": "string (optional)",
+  "releaseDate": "2024-01-01T00:00:00 (optional)"
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "id": 1,
+  "title": "Album Title",
+  "description": "Album description",
+  "artist": "artist_username",
+  "genre": "Pop",
+  "price": 12.99,
+  "coverImageUrl": "https://example.com/cover.jpg",
+  "releaseDate": "2024-01-01T00:00:00",
+  "createdAt": "2024-01-01T10:00:00",
+  "updatedAt": "2024-01-01T10:00:00",
+  "trackCount": 0
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "message": "Artist not found or invalid data"
+}
+```
+
+### 5. Update Album
+**Endpoint:** `PUT /api/albums/{id}`
+
+**Description:** Update an existing album (requires ARTIST role and ownership)
+
+**Path Parameters:**
+- `id` (required) - Album ID
+
+**Request Headers:**
+```
+Authorization: Bearer JWT_TOKEN
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "string (optional)",
+  "description": "string (optional)",
+  "artistUsername": "string (optional)",
+  "genre": "string (optional)",
+  "price": 12.99,
+  "coverImageUrl": "string (optional)",
+  "releaseDate": "2024-01-01T00:00:00 (optional)"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "title": "Updated Album Title",
+  "description": "Updated description",
+  "artist": "artist_username",
+  "genre": "Rock",
+  "price": 15.99,
+  "coverImageUrl": "https://example.com/new-cover.jpg",
+  "releaseDate": "2024-01-01T00:00:00",
+  "createdAt": "2024-01-01T10:00:00",
+  "updatedAt": "2024-01-02T15:30:00",
+  "trackCount": 10
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "message": "Album not found"
+}
+```
+
+### 6. Delete Album
+**Endpoint:** `DELETE /api/albums/{id}`
+
+**Description:** Delete an album (requires ARTIST role and ownership or ADMIN role)
+
+**Path Parameters:**
+- `id` (required) - Album ID
+
+**Request Headers:**
+```
+Authorization: Bearer JWT_TOKEN
+```
+
+**Success Response (200):**
+```json
+{
+  "message": "Album deleted successfully"
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "message": "Album not found"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "error": "Failed to delete album"
+}
+```
+
+### 7. Get Albums by Artist
+**Endpoint:** `GET /api/albums/by-artist/{artistUsername}`
+
+**Description:** Get all albums by a specific artist
+
+**Path Parameters:**
+- `artistUsername` (required) - Artist username
+
+**Query Parameters:**
+- `page` (optional, default: 0) - Page number
+- `size` (optional, default: 12) - Page size
+
+**Success Response (200):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "title": "Album Title",
+      "description": "Album description",
+      "artist": "artist_username",
+      "genre": "Pop",
+      "price": 12.99,
+      "coverImageUrl": "https://example.com/cover.jpg",
+      "releaseDate": "2024-01-01T00:00:00",
+      "createdAt": "2024-01-01T10:00:00",
+      "updatedAt": "2024-01-01T10:00:00",
+      "trackCount": 10
+    }
+  ],
+  "totalElements": 5,
+  "totalPages": 1,
+  "size": 12,
+  "number": 0
+}
+```
+
+### 8. Get Artist Album Count
+**Endpoint:** `GET /api/albums/artists/{artistUsername}/count`
+
+**Description:** Get the total number of albums by an artist
+
+**Path Parameters:**
+- `artistUsername` (required) - Artist username
+
+**Success Response (200):**
+```json
+{
+  "count": 5,
+  "artist": "artist_username"
+}
+```
+
+### 9. Get All Genres
+**Endpoint:** `GET /api/albums/genres`
+
+**Description:** Get list of all available album genres
+
+**Success Response (200):**
+```json
+[
+  "Pop",
+  "Rock",
+  "Jazz",
+  "Classical",
+  "Electronic",
+  "Hip-Hop",
+  "Country",
+  "Blues",
+  "Alternative",
+  "R&B"
+]
+```
+
+### 10. Search Albums
+**Endpoint:** `GET /api/albums/search`
+
+**Description:** Search albums by title
+
+**Query Parameters:**
+- `query` (required) - Search query
+- `page` (optional, default: 0) - Page number
+- `size` (optional, default: 12) - Page size
+
+**Success Response (200):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "title": "Matching Album Title",
+      "description": "Album description",
+      "artist": "artist_username",
+      "genre": "Pop",
+      "price": 12.99,
+      "coverImageUrl": "https://example.com/cover.jpg",
+      "releaseDate": "2024-01-01T00:00:00",
+      "createdAt": "2024-01-01T10:00:00",
+      "updatedAt": "2024-01-01T10:00:00",
+      "trackCount": 10
+    }
+  ],
+  "totalElements": 3,
+  "totalPages": 1,
+  "size": 12,
+  "number": 0
+}
+```
+
 ## Cart Endpoints
 
 ### 1. Get User's Cart
