@@ -2,15 +2,18 @@
 
 ## Base URL
 ```
-http://localhost:8080
+http://localhost:8082
 ```
+
+## Overview
+This API provides endpoints for a music store application with support for user authentication, music management, cart operations, and audio streaming. The API is designed to work seamlessly with React frontends for music playback and e-commerce functionality.
 
 ## Authentication Endpoints
 
 ### 1. User Registration
 **Endpoint:** `POST /api/auth/register`
 
-**Description:** Register a new user (Customer or Artist only through public endpoint)
+**Description:** Register a new user (Customer or Artist)
 
 **Request Headers:**
 ```
@@ -22,23 +25,23 @@ Content-Type: application/json
 {
   "username": "string (required, 3-50 characters)",
   "password": "string (required, min 6 characters)",
-  "email": "string (required, valid email)",
+  "email": "string (required, valid email format)",
   "role": "string (required, 'CUSTOMER' or 'ARTIST')",
   "firstName": "string (optional)",
   "lastName": "string (optional)",
-  "artistName": "string (optional, for artists)",
-  "cover": "string (optional, for artists)"
+  "artistName": "string (optional, required for artists)",
+  "cover": "string (optional, bio/description for artists)"
 }
 ```
 
 **Success Response (200):**
 ```json
 {
-  "token": "JWT_TOKEN_STRING",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": 1,
-    "username": "testuser",
-    "email": "test@example.com",
+    "username": "john_doe",
+    "email": "john@example.com",
     "role": "CUSTOMER",
     "firstName": "John",
     "lastName": "Doe",
@@ -58,7 +61,7 @@ Content-Type: application/json
 ### 2. User Login
 **Endpoint:** `POST /api/auth/login`
 
-**Description:** Authenticate user and get JWT token
+**Description:** Authenticate user and receive JWT token for protected endpoints
 
 **Request Headers:**
 ```
@@ -76,16 +79,14 @@ Content-Type: application/json
 **Success Response (200):**
 ```json
 {
-  "token": "JWT_TOKEN_STRING",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": 1,
-    "username": "testuser",
-    "email": "test@example.com",
+    "username": "john_doe",
+    "email": "john@example.com",
     "role": "CUSTOMER",
     "firstName": "John",
-    "lastName": "Doe",
-    "artistName": null,
-    "cover": null
+    "lastName": "Doe"
   }
 }
 ```
@@ -104,76 +105,42 @@ Content-Type: application/json
 
 **Request Headers:**
 ```
-Authorization: Bearer JWT_TOKEN
+Authorization: Bearer {JWT_TOKEN}
 ```
 
 **Success Response (200):**
 ```json
 {
   "id": 1,
-  "username": "testuser",
-  "email": "test@example.com",
+  "username": "john_doe",
+  "email": "john@example.com",
   "role": "CUSTOMER",
   "firstName": "John",
-  "lastName": "Doe",
-  "artistName": null,
-  "cover": null
+  "lastName": "Doe"
 }
 ```
 
-**Error Response (401):**
-```json
-{
-  "message": "Not authenticated"
-}
-```
-
-### 4. Validate Token
-**Endpoint:** `POST /api/auth/validate-token`
-
-**Description:** Validate JWT token and get user information
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "username": "testuser",
-  "email": "test@example.com",
-  "role": "CUSTOMER",
-  "firstName": "John",
-  "lastName": "Doe",
-  "artistName": null,
-  "cover": null
-}
-```
-
-**Error Response (401):**
-```json
-{
-  "message": "Invalid or expired token"
-}
-```
+---
 
 ## Music Endpoints
 
-### 1. Get All Music
+### 1. Get All Music (Paginated)
 **Endpoint:** `GET /api/music`
 
-**Description:** Get paginated list of all music tracks
+**Description:** Retrieve paginated list of all music tracks with filtering and sorting options
 
 **Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 10) - Page size
-- `search` (optional) - Search term for music title or artist
+- `page` (optional, default: 0) - Page number (0-based)
+- `size` (optional, default: 50) - Number of items per page
+- `sortBy` (optional, default: "createdAt") - Field to sort by
+- `sortDir` (optional, default: "desc") - Sort direction ("asc" or "desc")
+- `genre` (optional) - Filter by genre
+- `artist` (optional) - Filter by artist username
+- `search` (optional) - Search in name, artist, or genre
 
-**Request Headers:**
+**Example Request:**
 ```
-Authorization: Bearer JWT_TOKEN (optional for public access)
+GET /api/music?page=0&size=10&sortBy=name&sortDir=asc&genre=Islamic
 ```
 
 **Success Response (200):**
@@ -182,29 +149,39 @@ Authorization: Bearer JWT_TOKEN (optional for public access)
   "content": [
     {
       "id": 1,
-      "title": "Song Title",
-      "artist": "Artist Name",
-      "genre": "Pop",
-      "duration": 180,
-      "price": 0.99,
-      "filePath": "/path/to/music/file",
-      "coverArt": "/path/to/cover/art",
-      "description": "Song description",
-      "releaseDate": "2024-01-01",
-      "approved": true
+      "name": "A Thousand Greetings",
+      "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
+      "price": 9.99,
+      "imageUrl": "https://example.com/images/thousand-greetings.jpg",
+      "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
+      "category": "Nasheed",
+      "artistUsername": "muhammad_al_muqit",
+      "albumName": "Spiritual Collection",
+      "genre": "Islamic",
+      "releaseYear": 2023,
+      "createdAt": "2024-01-15T10:30:00"
     }
   ],
-  "totalElements": 100,
-  "totalPages": 10,
-  "size": 10,
-  "number": 0
+  "pageable": {
+    "sort": {
+      "sorted": true,
+      "unsorted": false
+    },
+    "pageNumber": 0,
+    "pageSize": 10
+  },
+  "totalElements": 8,
+  "totalPages": 1,
+  "last": true,
+  "first": true,
+  "numberOfElements": 8
 }
 ```
 
 ### 2. Get Music by ID
 **Endpoint:** `GET /api/music/{id}`
 
-**Description:** Get specific music track by ID
+**Description:** Retrieve a specific music track by its ID
 
 **Path Parameters:**
 - `id` (required) - Music track ID
@@ -213,352 +190,61 @@ Authorization: Bearer JWT_TOKEN (optional for public access)
 ```json
 {
   "id": 1,
-  "title": "Song Title",
-  "artist": "Artist Name",
-  "genre": "Pop",
-  "duration": 180,
-  "price": 0.99,
-  "filePath": "/path/to/music/file",
-  "coverArt": "/path/to/cover/art",
-  "description": "Song description",
-  "releaseDate": "2024-01-01",
-  "approved": true
-}
-```
-
-### 3. Upload Music (Artists Only)
-**Endpoint:** `POST /api/music/upload`
-
-**Description:** Upload a new music track (requires ARTIST role)
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-Content-Type: multipart/form-data
-```
-
-**Request Body (Form Data):**
-- `title` (required) - Music title
-- `genre` (required) - Music genre
-- `price` (required) - Music price
-- `description` (optional) - Music description
-- `musicFile` (required) - Audio file
-- `coverFile` (optional) - Cover art image file
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "title": "Song Title",
-  "artist": "Artist Name",
-  "genre": "Pop",
-  "duration": 180,
-  "price": 0.99,
-  "filePath": "/path/to/music/file",
-  "coverArt": "/path/to/cover/art",
-  "description": "Song description",
-  "releaseDate": "2024-01-01",
-  "approved": false
-}
-```
-
-## Album Endpoints
-
-### 1. Get All Albums
-**Endpoint:** `GET /api/albums`
-
-**Description:** Get paginated list of all albums with filtering options
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 12) - Page size
-- `sortBy` (optional, default: "createdAt") - Sort field (createdAt, title, price, etc.)
-- `sortDir` (optional, default: "desc") - Sort direction (asc or desc)
-- `genre` (optional) - Filter by genre
-- `artist` (optional) - Filter by artist username
-- `search` (optional) - Search in album titles
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN (optional for public access)
-```
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "title": "Album Title",
-      "description": "Album description",
-      "artist": "artist_username",
-      "genre": "Pop",
-      "price": 12.99,
-      "coverImageUrl": "https://example.com/cover.jpg",
-      "releaseDate": "2024-01-01T00:00:00",
-      "createdAt": "2024-01-01T10:00:00",
-      "updatedAt": "2024-01-01T10:00:00",
-      "trackCount": 10
-    }
-  ],
-  "totalElements": 50,
-  "totalPages": 5,
-  "size": 12,
-  "number": 0
-}
-```
-
-### 2. Get Album by ID
-**Endpoint:** `GET /api/albums/{id}`
-
-**Description:** Get specific album by ID
-
-**Path Parameters:**
-- `id` (required) - Album ID
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "title": "Album Title",
-  "description": "Album description",
-  "artist": "artist_username",
-  "genre": "Pop",
-  "price": 12.99,
-  "coverImageUrl": "https://example.com/cover.jpg",
-  "releaseDate": "2024-01-01T00:00:00",
-  "createdAt": "2024-01-01T10:00:00",
-  "updatedAt": "2024-01-01T10:00:00",
-  "trackCount": 10
+  "name": "A Thousand Greetings",
+  "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
+  "price": 9.99,
+  "imageUrl": "https://example.com/images/thousand-greetings.jpg",
+  "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
+  "category": "Nasheed",
+  "artistUsername": "muhammad_al_muqit",
+  "albumName": "Spiritual Collection",
+  "genre": "Islamic",
+  "releaseYear": 2023,
+  "createdAt": "2024-01-15T10:30:00"
 }
 ```
 
 **Error Response (404):**
 ```json
 {
-  "message": "Album not found"
+  "message": "Music not found with id: 1"
 }
 ```
 
-### 3. Get Album with Tracks
-**Endpoint:** `GET /api/albums/{id}/with-tracks`
+### 3. Get Featured Music
+**Endpoint:** `GET /api/music/featured`
 
-**Description:** Get album by ID with all associated tracks loaded
-
-**Path Parameters:**
-- `id` (required) - Album ID
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "title": "Album Title",
-  "description": "Album description",
-  "artist": "artist_username",
-  "genre": "Pop",
-  "price": 12.99,
-  "coverImageUrl": "https://example.com/cover.jpg",
-  "releaseDate": "2024-01-01T00:00:00",
-  "createdAt": "2024-01-01T10:00:00",
-  "updatedAt": "2024-01-01T10:00:00",
-  "trackCount": 10
-}
-```
-
-### 4. Create Album (Artists Only)
-**Endpoint:** `POST /api/albums`
-
-**Description:** Create a new album (requires ARTIST role)
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "title": "string (required)",
-  "description": "string (optional)",
-  "artistUsername": "string (required)",
-  "genre": "string (required)",
-  "price": 12.99,
-  "coverImageUrl": "string (optional)",
-  "releaseDate": "2024-01-01T00:00:00 (optional)"
-}
-```
-
-**Success Response (201):**
-```json
-{
-  "id": 1,
-  "title": "Album Title",
-  "description": "Album description",
-  "artist": "artist_username",
-  "genre": "Pop",
-  "price": 12.99,
-  "coverImageUrl": "https://example.com/cover.jpg",
-  "releaseDate": "2024-01-01T00:00:00",
-  "createdAt": "2024-01-01T10:00:00",
-  "updatedAt": "2024-01-01T10:00:00",
-  "trackCount": 0
-}
-```
-
-**Error Response (400):**
-```json
-{
-  "message": "Artist not found or invalid data"
-}
-```
-
-### 5. Update Album
-**Endpoint:** `PUT /api/albums/{id}`
-
-**Description:** Update an existing album (requires ARTIST role and ownership)
-
-**Path Parameters:**
-- `id` (required) - Album ID
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "title": "string (optional)",
-  "description": "string (optional)",
-  "artistUsername": "string (optional)",
-  "genre": "string (optional)",
-  "price": 12.99,
-  "coverImageUrl": "string (optional)",
-  "releaseDate": "2024-01-01T00:00:00 (optional)"
-}
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "title": "Updated Album Title",
-  "description": "Updated description",
-  "artist": "artist_username",
-  "genre": "Rock",
-  "price": 15.99,
-  "coverImageUrl": "https://example.com/new-cover.jpg",
-  "releaseDate": "2024-01-01T00:00:00",
-  "createdAt": "2024-01-01T10:00:00",
-  "updatedAt": "2024-01-02T15:30:00",
-  "trackCount": 10
-}
-```
-
-**Error Response (404):**
-```json
-{
-  "message": "Album not found"
-}
-```
-
-### 6. Delete Album
-**Endpoint:** `DELETE /api/albums/{id}`
-
-**Description:** Delete an album (requires ARTIST role and ownership or ADMIN role)
-
-**Path Parameters:**
-- `id` (required) - Album ID
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "message": "Album deleted successfully"
-}
-```
-
-**Error Response (404):**
-```json
-{
-  "message": "Album not found"
-}
-```
-
-**Error Response (400):**
-```json
-{
-  "error": "Failed to delete album"
-}
-```
-
-### 7. Get Albums by Artist
-**Endpoint:** `GET /api/albums/by-artist/{artistUsername}`
-
-**Description:** Get all albums by a specific artist
-
-**Path Parameters:**
-- `artistUsername` (required) - Artist username
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 12) - Page size
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "title": "Album Title",
-      "description": "Album description",
-      "artist": "artist_username",
-      "genre": "Pop",
-      "price": 12.99,
-      "coverImageUrl": "https://example.com/cover.jpg",
-      "releaseDate": "2024-01-01T00:00:00",
-      "createdAt": "2024-01-01T10:00:00",
-      "updatedAt": "2024-01-01T10:00:00",
-      "trackCount": 10
-    }
-  ],
-  "totalElements": 5,
-  "totalPages": 1,
-  "size": 12,
-  "number": 0
-}
-```
-
-### 8. Get Artist Album Count
-**Endpoint:** `GET /api/albums/artists/{artistUsername}/count`
-
-**Description:** Get the total number of albums by an artist
-
-**Path Parameters:**
-- `artistUsername` (required) - Artist username
-
-**Success Response (200):**
-```json
-{
-  "count": 5,
-  "artist": "artist_username"
-}
-```
-
-### 9. Get All Genres
-**Endpoint:** `GET /api/albums/genres`
-
-**Description:** Get list of all available album genres
+**Description:** Get the first 8 music tracks to display as featured content
 
 **Success Response (200):**
 ```json
 [
+  {
+    "id": 1,
+    "name": "A Thousand Greetings",
+    "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
+    "price": 9.99,
+    "imageUrl": "https://example.com/images/thousand-greetings.jpg",
+    "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
+    "category": "Nasheed",
+    "artistUsername": "muhammad_al_muqit",
+    "albumName": "Spiritual Collection",
+    "genre": "Islamic",
+    "releaseYear": 2023,
+    "createdAt": "2024-01-15T10:30:00"
+  }
+]
+```
+
+### 4. Get Available Genres
+**Endpoint:** `GET /api/music/genres`
+
+**Description:** Get list of all available music genres
+
+**Success Response (200):**
+```json
+[
+  "Islamic",
   "Pop",
   "Rock",
   "Jazz",
@@ -566,21 +252,37 @@ Authorization: Bearer JWT_TOKEN
   "Electronic",
   "Hip-Hop",
   "Country",
-  "Blues",
-  "Alternative",
-  "R&B"
+  "Blues"
 ]
 ```
 
-### 10. Search Albums
-**Endpoint:** `GET /api/albums/search`
+### 5. Get Available Artists
+**Endpoint:** `GET /api/music/artists`
 
-**Description:** Search albums by title
+**Description:** Get list of all available artists
+
+**Success Response (200):**
+```json
+[
+  "muhammad_al_muqit",
+  "traditional_artist",
+  "grateful_voice",
+  "reflective_soul",
+  "yearning_heart"
+]
+```
+
+### 6. Get Music by Artist
+**Endpoint:** `GET /api/music/by-artist/{artistUsername}`
+
+**Description:** Get paginated music tracks by a specific artist
+
+**Path Parameters:**
+- `artistUsername` (required) - Artist's username
 
 **Query Parameters:**
-- `query` (required) - Search query
 - `page` (optional, default: 0) - Page number
-- `size` (optional, default: 12) - Page size
+- `size` (optional, default: 12) - Number of items per page
 
 **Success Response (200):**
 ```json
@@ -588,563 +290,238 @@ Authorization: Bearer JWT_TOKEN
   "content": [
     {
       "id": 1,
-      "title": "Matching Album Title",
-      "description": "Album description",
-      "artist": "artist_username",
-      "genre": "Pop",
-      "price": 12.99,
-      "coverImageUrl": "https://example.com/cover.jpg",
-      "releaseDate": "2024-01-01T00:00:00",
-      "createdAt": "2024-01-01T10:00:00",
-      "updatedAt": "2024-01-01T10:00:00",
-      "trackCount": 10
+      "name": "A Thousand Greetings",
+      "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
+      "price": 9.99,
+      "imageUrl": "https://example.com/images/thousand-greetings.jpg",
+      "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
+      "category": "Nasheed",
+      "artistUsername": "muhammad_al_muqit",
+      "albumName": "Spiritual Collection",
+      "genre": "Islamic",
+      "releaseYear": 2023,
+      "createdAt": "2024-01-15T10:30:00"
     }
   ],
   "totalElements": 3,
-  "totalPages": 1,
-  "size": 12,
-  "number": 0
+  "totalPages": 1
 }
 ```
 
-## Cart Endpoints
+### 7. Get Artist Music Count
+**Endpoint:** `GET /api/music/artists/{artistUsername}/count`
 
-### 1. Get User's Cart
-**Endpoint:** `GET /api/cart`
-
-**Description:** Get current user's shopping cart
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "customerId": 1,
-  "items": [
-    {
-      "id": 1,
-      "musicId": 1,
-      "title": "Song Title",
-      "artist": "Artist Name",
-      "price": 0.99,
-      "addedAt": "2024-01-01T10:00:00"
-    }
-  ],
-  "totalPrice": 0.99,
-  "itemCount": 1
-}
-```
-
-### 2. Add Item to Cart
-**Endpoint:** `POST /api/cart/add/{musicId}`
-
-**Description:** Add a music track to the cart
+**Description:** Get the total number of music tracks by a specific artist
 
 **Path Parameters:**
-- `musicId` (required) - Music track ID to add
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
+- `artistUsername` (required) - Artist's username
 
 **Success Response (200):**
 ```json
 {
-  "message": "Item added to cart successfully"
+  "count": 3,
+  "artist": "muhammad_al_muqit"
 }
 ```
 
-### 3. Remove Item from Cart
-**Endpoint:** `DELETE /api/cart/remove/{musicId}`
+### 8. Upload Music
+**Endpoint:** `POST /api/music/upload`
 
-**Description:** Remove a music track from the cart
+**Description:** Upload a new music file with metadata (Form data)
+
+**Request Headers:**
+```
+Content-Type: multipart/form-data
+Authorization: Bearer {JWT_TOKEN} (if authentication required)
+```
+
+**Form Data Parameters:**
+- `file` (required) - Audio file (MP3, WAV, etc.)
+- `name` (required) - Music track name
+- `description` (required) - Track description
+- `price` (required) - Price as decimal string
+- `genre` (required) - Music genre
+- `artist` (required) - Artist username
+- `albumName` (optional) - Album name
+- `releaseYear` (required) - Release year as string
+
+**Success Response (200):**
+```json
+{
+  "id": 9,
+  "name": "New Track",
+  "description": "Amazing new track",
+  "price": 15.99,
+  "audioFilePath": "/uploads/music/uuid_filename.mp3",
+  "category": "Pop",
+  "artistUsername": "new_artist",
+  "albumName": "New Album",
+  "genre": "Pop",
+  "releaseYear": 2024,
+  "createdAt": "2024-01-20T14:30:00"
+}
+```
+
+---
+
+## Audio Streaming
+
+### 1. Stream Music File
+**Endpoint:** `GET /uploads/music/{filename}`
+
+**Description:** Stream audio file for playback in React applications
 
 **Path Parameters:**
-- `musicId` (required) - Music track ID to remove
+- `filename` (required) - Audio file name from audioFilePath
 
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
+**Response:** Audio stream (MP3/WAV format)
+
+**Usage in React:**
+```javascript
+const audioUrl = `http://localhost:8082/uploads/music/A%20THOUSAND%20GREETINGS%20-%20MOTIVATIONAL%20NASHEED%20-%20MUHAMMAD%20AL%20MUQIT%20.mp3`;
+const audio = new Audio(audioUrl);
+audio.play();
 ```
 
-**Success Response (200):**
+---
+
+## Sample Music Data
+
+The application comes pre-loaded with 8 nasheed tracks:
+
+1. **A Thousand Greetings** - Muhammad Al Muqit ($9.99)
+2. **I Rise** - Muhammad Al Muqit ($8.99)
+3. **Qad Kafani Ilmu Rabbi** - Traditional Artist ($10.99)
+4. **Shukran Laka Rabbi** - Grateful Voice ($7.99)
+5. **Sins Nasheed** - Reflective Soul ($9.49)
+6. **Tabsirah (Slowed Reverb)** - Muhammad Al Muqit ($11.99)
+7. **Taweel Al Shawq** - Yearning Heart ($8.49)
+8. **The Book of Allah is My Constitution** - Muhammad Al Muqit ($12.99)
+
+All tracks are in the "Islamic" genre and "Nasheed" category with complete metadata including descriptions, album names, and release years.
+
+---
+
+## Error Handling
+
+### Common Error Responses
+
+**400 Bad Request:**
 ```json
 {
-  "message": "Item removed from cart successfully"
+  "message": "Invalid request parameters",
+  "details": "Specific validation error details"
 }
 ```
 
-### 4. Clear Cart
-**Endpoint:** `DELETE /api/cart/clear`
-
-**Description:** Remove all items from the cart
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "message": "Cart cleared successfully"
-}
-```
-
-## Review Endpoints
-
-### 1. Get Reviews for Music
-**Endpoint:** `GET /api/reviews/music/{musicId}`
-
-**Description:** Get all reviews for a specific music track
-
-**Path Parameters:**
-- `musicId` (required) - Music track ID
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 10) - Page size
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "musicId": 1,
-      "customerId": 1,
-      "customerName": "John Doe",
-      "rating": 5,
-      "comment": "Great song!",
-      "createdAt": "2024-01-01T10:00:00"
-    }
-  ],
-  "totalElements": 10,
-  "totalPages": 1,
-  "size": 10,
-  "number": 0
-}
-```
-
-### 2. Create Review
-**Endpoint:** `POST /api/reviews`
-
-**Description:** Create a new review for a music track
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "musicId": 1,
-  "rating": 5,
-  "comment": "Great song!"
-}
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "musicId": 1,
-  "customerId": 1,
-  "customerName": "John Doe",
-  "rating": 5,
-  "comment": "Great song!",
-  "createdAt": "2024-01-01T10:00:00"
-}
-```
-
-## Artist Endpoints
-
-### 1. Get Artist Profile
-**Endpoint:** `GET /api/artist/profile`
-
-**Description:** Get current artist's profile (requires ARTIST role)
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "username": "artist1",
-  "email": "artist@example.com",
-  "artistName": "Artist Name",
-  "firstName": "John",
-  "lastName": "Artist",
-  "cover": "/path/to/cover/image",
-  "musicCount": 5,
-  "totalRevenue": 15.50
-}
-```
-
-### 2. Get Artist's Music
-**Endpoint:** `GET /api/artist/music`
-
-**Description:** Get all music tracks by current artist
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 10) - Page size
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "title": "Song Title",
-      "genre": "Pop",
-      "duration": 180,
-      "price": 0.99,
-      "approved": true,
-      "uploadDate": "2024-01-01",
-      "downloads": 100
-    }
-  ],
-  "totalElements": 5,
-  "totalPages": 1,
-  "size": 10,
-  "number": 0
-}
-```
-
-## Customer Endpoints
-
-### 1. Get Customer Profile
-**Endpoint:** `GET /api/customer/profile`
-
-**Description:** Get current customer's profile
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "username": "customer1",
-  "email": "customer@example.com",
-  "firstName": "John",
-  "lastName": "Customer",
-  "purchaseHistory": [
-    {
-      "id": 1,
-      "musicId": 1,
-      "title": "Song Title",
-      "artist": "Artist Name",
-      "price": 0.99,
-      "purchaseDate": "2024-01-01T10:00:00"
-    }
-  ]
-}
-```
-
-### 2. Update Customer Profile
-**Endpoint:** `PUT /api/customer/profile`
-
-**Description:** Update current customer's profile
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "firstName": "John",
-  "lastName": "Customer",
-  "email": "newemail@example.com"
-}
-```
-
-**Success Response (200):**
-```json
-{
-  "message": "Profile updated successfully"
-}
-```
-
-## Admin Endpoints (Requires ADMIN role)
-
-### 1. Get System Overview
-**Endpoint:** `GET /api/admin/system-overview`
-
-**Description:** Get system statistics and overview
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Success Response (200):**
-```json
-{
-  "totalUsers": 1000,
-  "totalCustomers": 800,
-  "totalArtists": 150,
-  "totalStaff": 45,
-  "totalAdmins": 5,
-  "totalMusic": 5000,
-  "pendingApprovals": 25,
-  "totalRevenue": 50000.00,
-  "monthlyActiveUsers": 750
-}
-```
-
-### 2. Get All Users (Paginated)
-**Endpoint:** `GET /api/admin/users`
-
-**Description:** Get paginated list of all users
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 20) - Page size
-- `role` (optional) - Filter by role (CUSTOMER, ARTIST, STAFF, ADMIN)
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "username": "user1",
-      "email": "user@example.com",
-      "role": "CUSTOMER",
-      "firstName": "John",
-      "lastName": "Doe",
-      "enabled": true,
-      "createdAt": "2024-01-01T10:00:00"
-    }
-  ],
-  "totalElements": 1000,
-  "totalPages": 50,
-  "size": 20,
-  "number": 0
-}
-```
-
-### 3. Approve/Reject Music
-**Endpoint:** `PUT /api/admin/music/{musicId}/status`
-
-**Description:** Approve or reject music submission
-
-**Path Parameters:**
-- `musicId` (required) - Music track ID
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "approved": true,
-  "rejectionReason": "Optional rejection reason if approved is false"
-}
-```
-
-**Success Response (200):**
-```json
-{
-  "message": "Music status updated successfully"
-}
-```
-
-## Staff Endpoints (Requires STAFF role)
-
-### 1. Get Pending Music Approvals
-**Endpoint:** `GET /api/staff/music/pending`
-
-**Description:** Get list of music tracks pending approval
-
-**Request Headers:**
-```
-Authorization: Bearer JWT_TOKEN
-```
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 20) - Page size
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "title": "Song Title",
-      "artist": "Artist Name",
-      "genre": "Pop",
-      "duration": 180,
-      "uploadDate": "2024-01-01",
-      "filePath": "/path/to/file"
-    }
-  ],
-  "totalElements": 25,
-  "totalPages": 2,
-  "size": 20,
-  "number": 0
-}
-```
-
-## Error Responses
-
-All endpoints may return the following error responses:
-
-### 401 Unauthorized
+**401 Unauthorized:**
 ```json
 {
   "message": "Authentication required"
 }
 ```
 
-### 403 Forbidden
+**403 Forbidden:**
 ```json
 {
-  "message": "Access denied - insufficient permissions"
+  "message": "Access denied"
 }
 ```
 
-### 404 Not Found
+**404 Not Found:**
 ```json
 {
   "message": "Resource not found"
 }
 ```
 
-### 500 Internal Server Error
+**500 Internal Server Error:**
 ```json
 {
-  "message": "Internal server error"
+  "message": "Internal server error",
+  "details": "Error processing request"
 }
 ```
 
-## Authentication Flow for React Frontend
-
-### 1. Registration/Login Flow
-```javascript
-// Registration
-const register = async (userData) => {
-  const response = await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(userData),
-  });
-  
-  if (response.ok) {
-    const data = await response.json();
-    // Store token in localStorage or secure storage
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    return data;
-  }
-  throw new Error('Registration failed');
-};
-
-// Login
-const login = async (credentials) => {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
-  
-  if (response.ok) {
-    const data = await response.json();
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    return data;
-  }
-  throw new Error('Login failed');
-};
-```
-
-### 2. Making Authenticated Requests
-```javascript
-const makeAuthenticatedRequest = async (url, options = {}) => {
-  const token = localStorage.getItem('token');
-  
-  const config = {
-    ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`,
-    },
-  };
-  
-  const response = await fetch(url, config);
-  
-  if (response.status === 401) {
-    // Token expired, redirect to login
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-    return;
-  }
-  
-  return response;
-};
-```
-
-### 3. Role-Based Access Control
-```javascript
-const checkUserRole = (requiredRole) => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  return user.role === requiredRole;
-};
-
-// Usage in React components
-const AdminComponent = () => {
-  if (!checkUserRole('ADMIN')) {
-    return <div>Access Denied</div>;
-  }
-  
-  return <div>Admin Dashboard</div>;
-};
-```
+---
 
 ## CORS Configuration
-The API is configured to accept requests from `http://localhost:3000` for React development. Make sure your React app runs on this port, or update the CORS configuration in the Spring Boot application.
 
-## File Upload Considerations
-When uploading music files or images:
-- Maximum file size: Check application configuration
-- Supported formats: MP3, WAV, FLAC for audio; JPG, PNG for images
-- Files are stored in the `/uploads` directory
-- Use `multipart/form-data` content type for file uploads
+The API is configured to accept requests from:
+- `http://localhost:5173` (Default Vite React development server)
 
-This documentation provides all the endpoints you need to build a complete React frontend for the Music Store application. Each endpoint includes request/response examples and proper authentication handling.
+---
+
+## React Frontend Integration
+
+### Basic Usage Example
+
+```javascript
+// Fetch all music tracks
+const fetchMusic = async () => {
+  try {
+    const response = await fetch('http://localhost:8082/api/music?page=0&size=20');
+    const data = await response.json();
+    return data.content; // Array of music tracks
+  } catch (error) {
+    console.error('Error fetching music:', error);
+  }
+};
+
+// Play a music track
+const playTrack = (audioFilePath) => {
+  const audio = new Audio(`http://localhost:8082${audioFilePath}`);
+  audio.play();
+};
+
+// Get featured music for homepage
+const fetchFeaturedMusic = async () => {
+  try {
+    const response = await fetch('http://localhost:8082/api/music/featured');
+    const featuredTracks = await response.json();
+    return featuredTracks;
+  } catch (error) {
+    console.error('Error fetching featured music:', error);
+  }
+};
+```
+
+### Audio Player Component Example
+
+```jsx
+import React, { useState, useRef } from 'react';
+
+const AudioPlayer = ({ track }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  const togglePlayPause = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  return (
+    <div className="audio-player">
+      <audio
+        ref={audioRef}
+        src={`http://localhost:8082${track.audioFilePath}`}
+        onEnded={() => setIsPlaying(false)}
+      />
+      <button onClick={togglePlayPause}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <div className="track-info">
+        <h3>{track.name}</h3>
+        <p>{track.artistUsername}</p>
+        <p>${track.price}</p>
+      </div>
+    </div>
+  );
+};
+```
+
+This API documentation provides everything you need to integrate music playback functionality into your React frontend application.

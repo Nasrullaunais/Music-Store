@@ -58,6 +58,14 @@ public class MusicApiController {
         return ResponseEntity.ok(musicDtoPage);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<MusicDto>> searchMusic(@RequestParam String query){
+        return ResponseEntity.ok(
+            musicService.searchMusic(query, 0, 50)
+                .map(this::convertToDto)
+        );
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<MusicDto> getMusicById(@PathVariable Long id) {
         Optional<Music> music = musicService.getMusicById(id);

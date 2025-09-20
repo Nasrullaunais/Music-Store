@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MusicRepository extends JpaRepository<Music, Long> {
@@ -38,6 +39,9 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
     // Search by title or artist (for CustomerApiController search)
     Page<Music> findByNameContainingIgnoreCaseOrArtistUsernameContainingIgnoreCase(
             String name, String artistUsername, Pageable pageable);
+
+
+    Optional<Music> findByNameContainingIgnoreCase(String name);
 
     // Paginated version for better performance
     Page<Music> findByArtistUsername(String artistUsername, Pageable pageable);

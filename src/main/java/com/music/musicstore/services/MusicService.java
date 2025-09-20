@@ -217,6 +217,22 @@ public class MusicService {
         }
     }
 
+    public Optional<Music> getMusicByName(String query) {
+        logger.debug("Finding music by name: {}", query);
+
+        if (query == null || query.trim().isEmpty()) {
+            logger.error("Search query is null or empty");
+            throw new ValidationException("Search query cannot be null or empty");
+        }
+
+        try {
+            return musicRepository.findByNameContainingIgnoreCase(query);
+        } catch (Exception e) {
+            logger.error("Error finding music by name: {}", query, e);
+            throw new RuntimeException("Failed to find music by name", e);
+        }
+    }
+
     // Missing methods needed by CustomerApiController
 
     public List<Music> getDownloadableMusic(String username) {

@@ -33,19 +33,22 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/music", "/api/music/**").permitAll() // Allow public access to all music endpoints
                 .requestMatchers("/api/music/browse/**", "/api/music/preview/**").permitAll()
                 .requestMatchers("/api/reviews/music/**").permitAll()
                 .requestMatchers("/static/**", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll() // Allow public access to uploaded music files
                 .requestMatchers("/").permitAll()
 
-                // Customer endpoints
+                // Customer endpoints (override specific music endpoints that need authentication)
                 .requestMatchers("/api/cart/**", "/api/orders/**", "/api/playlists/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/music/purchase/**", "/api/music/download/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/tickets/create").hasAnyRole("CUSTOMER", "ARTIST")
                 .requestMatchers("/api/reviews/create").hasRole("CUSTOMER")
 
-                // Artist endpoints
-                .requestMatchers("/api/music/upload/**", "/api/music/manage/**").hasRole("ARTIST")
+                // Artist endpoints (override music upload/manage)
+                .requestMatchers("/api/music/upload").hasRole("ARTIST")
+                .requestMatchers("/api/music/manage/**").hasRole("ARTIST")
                 .requestMatchers("/api/reviews/artist/**").hasRole("ARTIST")
                 .requestMatchers("/api/analytics/artist/**").hasRole("ARTIST")
 
