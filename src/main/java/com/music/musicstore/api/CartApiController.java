@@ -75,6 +75,20 @@ public class CartApiController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/checkout")
+    public ResponseEntity<Void> checkout(@AuthenticationPrincipal Customer customer) {
+        if (customer == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            cartService.checkout(customer);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     private CartDto convertToDto(Cart cart) {
         // Implementation would convert Cart entity to CartDto
         // This would include converting cart items and calculating totals

@@ -7,6 +7,7 @@ import com.music.musicstore.models.order.OrderItem;
 import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.CartItemRepository;
 import com.music.musicstore.repositories.OrderRepository;
+import com.music.musicstore.services.CustomerService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,13 +28,15 @@ public class OrderService {
     private final CartService cartService;
     private final CartItemRepository cartItemRepository;
     private final EmailSender emailSender;
+    private final CustomerService customerService;
 
     @Autowired
-    public OrderService(OrderRepository orderRepository, CartService cartService, CartItemRepository cartItemRepository, EmailSender emailSender) {
+    public OrderService(OrderRepository orderRepository, CartService cartService, CartItemRepository cartItemRepository, EmailSender emailSender, CustomerService customerService) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
         this.cartItemRepository = cartItemRepository;
         this.emailSender = emailSender;
+        this.customerService = customerService;
     }
 
     public void placeOrder(Customer customer){
@@ -80,9 +83,42 @@ public class OrderService {
     }
 
     public Order checkout(String username) {
-        // Implementation for checkout by username
-        // This would need CustomerService integration
-        throw new RuntimeException("Checkout by username not yet implemented");
+        try {
+            Customer customer = customerService.findByUsername(username);
+            if (customer == null) {
+                throw new RuntimeException("Customer not found with username: " + username);
+            }
+            
+            Cart cart = cartService.getOrCreateCart(customer);
+            if (cart.getItems().isEmpty()) {
+                throw new IllegalStateException("Cannot place order with empty cart");
+            }
+
+            Order order = new Order(cart);
+            order.setOrderDate(LocalDateTime.now());
+            order.setCustomer(customer);
+            order.setTotalAmount(cart.getTotalAmount());
+            order.setStatus(Order.OrderStatus.PENDING);
+
+            // Convert cart items to order items
+            for (CartItem cartItem : cart.getItems()) {
+                OrderItem orderItem = new OrderItem(cartItem);
+                orderItem.setOrder(order);
+                order.getOrderItems().add(orderItem);
+            }
+
+            Order savedOrder = orderRepository.save(order);
+
+            // Send receipt email
+            emailSender.sendReceipt(order.getTotalAmount(), cart.getItemList(), customer.getEmail(), order.getId().toString());
+
+            // Clear the cart after successful order
+            cartService.clearCart(customer);
+
+            return savedOrder;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process checkout: " + e.getMessage(), e);
+        }
     }
 
     public Order purchaseMusic(String username, Long musicId) {

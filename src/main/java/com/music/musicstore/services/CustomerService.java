@@ -123,22 +123,9 @@ public class CustomerService {
         }
     }
 
+    @Transactional
     public Customer save(Customer customer) {
-        logger.debug("Saving customer: {}", customer != null ? customer.getUsername() : "null");
-
-        if (customer == null) {
-            logger.error("Customer object is null");
-            throw new ValidationException("Customer cannot be null");
-        }
-
-        try {
-            Customer savedCustomer = customerRepository.save(customer);
-            logger.info("Successfully saved customer: {}", savedCustomer.getUsername());
-            return savedCustomer;
-        } catch (Exception e) {
-            logger.error("Error saving customer: {}", customer.getUsername(), e);
-            throw new RuntimeException("Failed to save customer", e);
-        }
+        return customerRepository.save(customer);
     }
 
     public Customer findById(Long id) {

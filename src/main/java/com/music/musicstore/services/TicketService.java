@@ -29,13 +29,13 @@ public class TicketService {
     }
 
     // Original method - create ticket with Customer object
-    public void createTicket(Customer customer, String subject, String message){
+    public Ticket createTicket(Customer customer, String subject, String message){
         Ticket ticket = new Ticket();
         ticket.setCustomer(customer);
         ticket.setSubject(subject);
         ticket.setMessage(message);
         ticket.setStatus("OPEN");
-        ticketRepository.save(ticket);
+        return ticketRepository.save(ticket);
     }
 
     // Overloaded method - create ticket with Customer object and priority

@@ -1,6 +1,7 @@
 package com.music.musicstore.models.users;
 
 import com.music.musicstore.models.cart.Cart;
+import com.music.musicstore.models.music.Music;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "customers")
@@ -51,6 +54,14 @@ public class Customer implements UserDetails {
 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private Cart cart;
+
+    @ManyToMany
+    @JoinTable(
+            name = "customer_purchased_music",
+            joinColumns = @JoinColumn(name = "customer_id"),
+            inverseJoinColumns = @JoinColumn(name = "music_id")
+    )
+    private Set<Music> purchasedMusic = new HashSet<>();
 
     // Default constructor required by JPA
     public Customer() {
@@ -121,6 +132,14 @@ public class Customer implements UserDetails {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Set<Music> getPurchasedMusic() {
+        return purchasedMusic;
+    }
+
+    public void setPurchasedMusic(Set<Music> purchasedMusic) {
+        this.purchasedMusic = purchasedMusic;
     }
 
     public Cart getCart() {

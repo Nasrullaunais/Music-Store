@@ -93,6 +93,15 @@ public class CartService {
                 throw new BusinessRuleException("Music is already in cart");
             }
 
+            // Check if music is already purchased
+            boolean alreadyPurchased = customer.getPurchasedMusic().stream()
+                    .anyMatch(purchased -> purchased.getId().equals(musicId));
+
+            if (alreadyPurchased) {
+                logger.warn("Music ID: {} has already been purchased by customer: {}", musicId, customer.getUsername());
+                throw new BusinessRuleException("You have already purchased this music");
+            }
+
             CartItem item = new CartItem(music);
             item.setCart(cart);
             cartItemRepository.save(item);
@@ -100,10 +109,28 @@ public class CartService {
             cartRepository.save(cart);
 
             logger.info("Successfully added music ID: {} to cart for customer: {}", musicId, customer.getUsername());
+        } catch (ResourceNotFoundException | BusinessRuleException e) {
+            throw e; // Re-throw known exceptions
         } catch (Exception e) {
-            logger.error("Error adding music ID: {} to cart for customer: {}", musicId, customer.getUsername(), e);
-            throw e;
+            logger.error("Error adding music to cart for customer: {}", customer != null ? customer.getUsername() : "null", e);
+            throw new RuntimeException("Failed to add music to cart", e);
         }
+    }
+
+    @Transactional
+    public void checkout(Customer customer) {
+        Cart cart = getOrCreateCart(customer);
+        if (cart.getItems().isEmpty()) {
+            throw new BusinessRuleException("Cart is empty");
+        }
+
+        for (CartItem item : cart.getItems()) {
+            customer.getPurchasedMusic().add(item.getMusic());
+        }
+
+        customerService.save(customer);
+        cart.getItems().clear();
+        cartRepository.save(cart);
     }
 
     @Transactional

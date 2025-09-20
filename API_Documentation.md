@@ -452,6 +452,150 @@ The API is configured to accept requests from:
 
 ---
 
+## Checkout and Orders
+
+### 1. Checkout Cart
+**Endpoint:** `POST /api/customers/cart/checkout`
+
+**Description:** Place an order from the current user's cart items and send email receipt. This endpoint supports multiple music purchases in a single transaction - all items currently in the user's cart will be included in the order.
+
+**Request Headers:**
+```
+Authorization: Bearer {JWT_TOKEN}
+Content-Type: application/json
+```
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "orderDate": "2024-01-20T15:30:00",
+  "totalAmount": 29.97,
+  "status": "PENDING",
+  "paymentMethod": null,
+  "orderItems": [
+    {
+      "id": 1,
+      "music": {
+        "id": 1,
+        "name": "A Thousand Greetings",
+        "price": 9.99,
+        "artistUsername": "muhammad_al_muqit"
+      },
+      "unitPrice": 9.99,
+      "musicTitle": "A Thousand Greetings",
+      "artistName": "muhammad_al_muqit"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Cart is empty
+- **401 Unauthorized:** User not authenticated
+- **500 Internal Server Error:** Failed to process checkout
+
+### 2. Get User Orders
+**Endpoint:** `GET /api/customers/orders`
+
+**Description:** Get paginated list of orders for the authenticated user
+
+**Request Headers:**
+```
+Authorization: Bearer {JWT_TOKEN}
+```
+
+**Query Parameters:**
+- `page` (optional, default: 0) - Page number
+- `size` (optional, default: 10) - Number of orders per page
+
+**Success Response (200):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "orderDate": "2024-01-20T15:30:00",
+      "totalAmount": 29.97,
+      "status": "PENDING",
+      "orderItems": [
+        {
+          "id": 1,
+          "musicTitle": "A Thousand Greetings",
+          "artistName": "muhammad_al_muqit",
+          "unitPrice": 9.99
+        }
+      ]
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
+}
+```
+
+### 3. Get Order Details
+**Endpoint:** `GET /api/customers/orders/{orderId}`
+
+**Description:** Get detailed information about a specific order
+
+**Request Headers:**
+```
+Authorization: Bearer {JWT_TOKEN}
+```
+
+**Path Parameters:**
+- `orderId` (required) - Order ID
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "orderDate": "2024-01-20T15:30:00",
+  "totalAmount": 29.97,
+  "status": "PENDING",
+  "paymentMethod": null,
+  "orderItems": [
+    {
+      "id": 1,
+      "music": {
+        "id": 1,
+        "name": "A Thousand Greetings",
+        "price": 9.99,
+        "artistUsername": "muhammad_al_muqit"
+      },
+      "unitPrice": 9.99,
+      "musicTitle": "A Thousand Greetings",
+      "artistName": "muhammad_al_muqit"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- **404 Not Found:** Order not found
+- **403 Forbidden:** Order doesn't belong to user
+
+### Email Receipt
+When an order is successfully placed through checkout, an email receipt is automatically sent to the customer's registered email address containing:
+- Order ID and date
+- List of purchased music tracks
+- Total amount paid
+- Thank you message
+
+---
+
 ## React Frontend Integration
 
 ### Basic Usage Example
