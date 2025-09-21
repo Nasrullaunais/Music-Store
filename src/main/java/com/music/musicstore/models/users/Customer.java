@@ -1,5 +1,7 @@
 package com.music.musicstore.models.users;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.music.musicstore.models.cart.Cart;
 import com.music.musicstore.models.music.Music;
 import jakarta.persistence.*;
@@ -31,6 +33,7 @@ public class Customer implements UserDetails {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @NotBlank(message = "First name is required")
@@ -47,12 +50,14 @@ public class Customer implements UserDetails {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String role = "ROLE_CUSTOMER";
 
     @Column(nullable = false)
     private boolean enabled = true;
 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
+    @JsonIgnore  // This breaks the circular reference
     private Cart cart;
 
     @ManyToMany
@@ -61,6 +66,7 @@ public class Customer implements UserDetails {
             joinColumns = @JoinColumn(name = "customer_id"),
             inverseJoinColumns = @JoinColumn(name = "music_id")
     )
+    @JsonIgnore  // Don't serialize purchased music in ticket responses
     private Set<Music> purchasedMusic = new HashSet<>();
 
     // Default constructor required by JPA

@@ -6,13 +6,18 @@ http://localhost:8082
 ```
 
 ## Overview
-This API provides endpoints for a comprehensive music store application with support for user authentication, music management, cart operations, order processing, reviews, and administrative functions. The API features an improved rating system with cached averages and optimized cart functionality for better performance.
+This API provides endpoints for a comprehensive music store application with support for user authentication, music management, cart operations, order processing, reviews, and administrative functions. The API features an enhanced ticket support system with chat-like messaging capabilities.
 
 ## Recent Updates (September 2025)
-- **Enhanced Rating System**: Music tracks now store average ratings and review counts for better performance
-- **Optimized Cart Operations**: Fixed LazyInitializationException and improved cart total calculations
-- **Improved Checkout Process**: Fixed null value constraints and enhanced order processing
-- **Better Error Handling**: Added specific HTTP status codes and detailed error messages
+- **Revolutionary Chat-Based Ticket System**: Complete overhaul of the support ticket system
+  - Tickets now support multiple messages in a conversation format
+  - Real-time chat between customers and staff members
+  - Staff assignment and escalation capabilities
+  - Comprehensive ticket status management
+- **Simplified Architecture**: Removed pagination complexity for university project requirements
+- **Enhanced Performance**: Optimized queries and removed unnecessary complexity
+- **Better User Experience**: Chat-like interface for support interactions
+- **Complete Admin Management**: Full administrative control over tickets, users, music, and orders
 
 ## Authentication
 Most endpoints require JWT authentication via the `Authorization` header:
@@ -51,1021 +56,659 @@ Content-Type: application/json
 }
 ```
 
-**Success Response (200):**
+**Response (Success - 200 OK):**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "jwt_token_string",
+  "type": "Bearer",
   "user": {
     "id": 1,
     "username": "john_doe",
     "email": "john@example.com",
-    "role": "CUSTOMER",
-    "firstName": "John",
-    "lastName": "Doe",
-    "artistName": null,
-    "cover": null
+    "role": "CUSTOMER"
   }
 }
 ```
 
-**Error Responses:**
-- **400**: Invalid username or password
-- **500**: Internal server error
+---
 
-### 2. User Registration
-**Endpoint:** `POST /api/auth/register`
+## Admin Management System
 
-**Access Level:** PUBLIC
+### User Management
 
-**Description:** Register a new user (Customer or Artist)
+#### 1. Create User
+**Endpoint:** `POST /api/admin/users/create`
 
-**Request Headers:**
-```
-Content-Type: application/json
-```
+**Access Level:** ADMIN
+
+**Description:** Create a new user with specified role
 
 **Request Body:**
 ```json
 {
-  "username": "string (required, 3-50 characters)",
-  "password": "string (required, min 6 characters)",
-  "email": "string (required, valid email format)",
-  "role": "string (required, 'CUSTOMER' or 'ARTIST')",
+  "username": "string (required)",
+  "password": "string (required)",
+  "email": "string (required)",
+  "role": "string (required: CUSTOMER, ARTIST, STAFF, ADMIN)",
   "firstName": "string (optional)",
   "lastName": "string (optional)",
-  "artistName": "string (optional, required for artists)",
-  "cover": "string (optional, bio/description for artists)"
+  "artistName": "string (optional, for ARTIST role)",
+  "cover": "string (optional, cover image URL)"
 }
 ```
 
-**Success Response (200):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 2,
-    "username": "new_user",
-    "email": "newuser@example.com",
-    "role": "CUSTOMER",
-    "firstName": "New",
-    "lastName": "User"
-  }
-}
-```
+#### 2. Get All Users
+**Endpoint:** `GET /api/admin/users`
 
-**Error Responses:**
-- **400**: Validation errors or user already exists
-- **500**: Internal server error
-
----
-
-## Music Endpoints
-
-### 1. Get All Music
-**Endpoint:** `GET /api/music`
-
-**Access Level:** PUBLIC
-
-**Description:** Retrieve all music tracks with enhanced rating information
+**Access Level:** ADMIN
 
 **Query Parameters:**
-- `page` (optional): Page number for pagination (default: 0)
-- `size` (optional): Number of items per page (default: 10)
-- `sort` (optional): Sort field (default: created date)
+- `page` (int, default: 0): Page number
+- `size` (int, default: 10): Page size
+- `role` (String, optional): Filter by user role
 
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Song Title",
-      "description": "Song description",
-      "price": 9.99,
-      "imageUrl": "/uploads/covers/song.jpg",
-      "audioFilePath": "/uploads/music/song.mp3",
-      "category": "Pop",
-      "artist": "artist_username",
-      "artistName": "Artist Display Name",
-      "albumName": "Album Name",
-      "genre": "Pop",
-      "releaseYear": 2024,
-      "averageRating": 4.25,
-      "totalReviews": 12,
-      "createdAt": "2024-01-15T10:30:00"
-    }
-  ],
-  "totalElements": 50,
-  "totalPages": 5,
-  "size": 10,
-  "number": 0
-}
-```
+#### 3. Update User
+**Endpoint:** `PUT /api/admin/users/{userId}`
 
-### 2. Get Music by ID
-**Endpoint:** `GET /api/music/{id}`
+**Access Level:** ADMIN
 
-**Access Level:** PUBLIC
+#### 4. Delete User
+**Endpoint:** `DELETE /api/admin/users/{userId}`
 
-**Description:** Get detailed information about a specific music track
+**Access Level:** ADMIN
 
-**Path Parameters:**
-- `id`: Music ID
+#### 5. Update User Status
+**Endpoint:** `PUT /api/admin/users/{userId}/status`
 
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "name": "Song Title",
-  "description": "Detailed song description",
-  "price": 9.99,
-  "imageUrl": "/uploads/covers/song.jpg",
-  "audioFilePath": "/uploads/music/song.mp3",
-  "category": "Pop",
-  "artist": "artist_username",
-  "albumName": "Album Name",
-  "genre": "Pop",
-  "releaseYear": 2024,
-  "averageRating": 4.25,
-  "totalReviews": 12,
-  "createdAt": "2024-01-15T10:30:00"
-}
-```
-
-**Error Responses:**
-- **404**: Music not found
-
----
-
-## Cart Endpoints (Enhanced)
-
-### 1. Get User Cart
-**Endpoint:** `GET /api/cart`
-
-**Access Level:** CUSTOMER
-
-**Description:** Retrieve user's current cart with all items
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "customerUsername": "john_doe",
-  "items": [
-    {
-      "id": 1,
-      "music": {
-        "id": 5,
-        "name": "Song Title",
-        "artist": "artist_username",
-        "price": 9.99,
-        "imageUrl": "/uploads/covers/song.jpg"
-      },
-      "unitPrice": 9.99,
-      "totalPrice": 9.99
-    }
-  ],
-  "total": 19.98
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-
-### 2. Add to Cart
-**Endpoint:** `POST /api/cart/add/{musicId}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Add a music track to user's cart
-
-**Path Parameters:**
-- `musicId`: ID of the music to add
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "customerUsername": "john_doe",
-  "items": [
-    {
-      "id": 1,
-      "music": {
-        "id": 5,
-        "name": "Song Title",
-        "artist": "artist_username",
-        "price": 9.99,
-        "imageUrl": "/uploads/covers/song.jpg"
-      },
-      "unitPrice": 9.99,
-      "totalPrice": 9.99
-    }
-  ],
-  "total": 9.99
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **404**: Music not found
-- **409**: Music already in cart or already purchased
-
-### 3. Remove from Cart
-**Endpoint:** `DELETE /api/cart/remove/{itemId}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Remove an item from user's cart
-
-**Path Parameters:**
-- `itemId`: Cart item ID to remove
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "customerUsername": "john_doe",
-  "items": [],
-  "total": 0.00
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **404**: Cart item not found
-- **403**: Unauthorized to remove this item
-
-### 4. Clear Cart
-**Endpoint:** `POST /api/cart/clear`
-
-**Access Level:** CUSTOMER
-
-**Description:** Remove all items from user's cart
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "customerUsername": "john_doe",
-  "items": [],
-  "total": 0.00
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **500**: Failed to clear cart
-
-### 5. Checkout Cart
-**Endpoint:** `POST /api/cart/checkout`
-
-**Access Level:** CUSTOMER
-
-**Description:** Process cart checkout and create order (Enhanced with proper total calculation)
-
-**Success Response (200):**
-```json
-{
-  "message": "Checkout successful",
-  "orderId": 123
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **400**: Cart is empty or invalid cart state
-- **500**: Failed to process checkout
-
----
-
-## Review Endpoints (Enhanced Rating System)
-
-### 1. Create Review
-**Endpoint:** `POST /api/reviews/music/{musicId}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Create a review for a music track (automatically updates music rating statistics)
-
-**Path Parameters:**
-- `musicId`: ID of the music to review
+**Access Level:** ADMIN
 
 **Request Body:**
 ```json
 {
-  "rating": 5,
-  "comment": "Great song! Love it."
+  "enabled": "boolean (required)"
 }
 ```
 
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "musicId": 5,
-  "username": "john_doe",
-  "customerName": "John Doe",
-  "rating": 5,
-  "comment": "Great song! Love it.",
-  "createdAt": "2024-01-15T10:30:00",
-  "updatedAt": "2024-01-15T10:30:00",
-  "isOwnReview": true
-}
-```
+### Music Management
 
-**Error Responses:**
-- **401**: Authentication required
-- **400**: Invalid rating (must be 1-5) or user already reviewed
-- **404**: Music not found
+#### 1. Get All Music (Admin)
+**Endpoint:** `GET /api/admin/music`
 
-### 2. Update Review
-**Endpoint:** `PUT /api/reviews/{reviewId}`
+**Access Level:** ADMIN
 
-**Access Level:** CUSTOMER
+#### 2. Delete Music
+**Endpoint:** `DELETE /api/admin/music/{musicId}`
 
-**Description:** Update an existing review (automatically recalculates music rating statistics)
+**Access Level:** ADMIN
 
-**Path Parameters:**
-- `reviewId`: ID of the review to update
+#### 3. Update Music Status
+**Endpoint:** `PUT /api/admin/music/{musicId}/status`
+
+**Access Level:** ADMIN
 
 **Request Body:**
 ```json
 {
-  "rating": 4,
-  "comment": "Updated review comment"
+  "status": "string (required)"
 }
 ```
 
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "musicId": 5,
-  "username": "john_doe",
-  "customerName": "John Doe",
-  "rating": 4,
-  "comment": "Updated review comment",
-  "createdAt": "2024-01-15T10:30:00",
-  "updatedAt": "2024-01-15T11:00:00",
-  "isOwnReview": true
-}
-```
+### Order Management
 
-**Error Responses:**
-- **401**: Authentication required
-- **400**: Invalid rating or unauthorized access
-- **404**: Review not found
+#### 1. Get All Orders (Admin)
+**Endpoint:** `GET /api/admin/orders`
 
-### 3. Delete Review
-**Endpoint:** `DELETE /api/reviews/{reviewId}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Delete a review (automatically recalculates music rating statistics)
-
-**Path Parameters:**
-- `reviewId`: ID of the review to delete
-
-**Success Response (200):**
-```json
-{
-  "message": "Review deleted successfully"
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **403**: Can only delete own reviews
-- **404**: Review not found
-
-### 4. Get Reviews for Music
-**Endpoint:** `GET /api/reviews/music/{musicId}`
-
-**Access Level:** PUBLIC
-
-**Description:** Get paginated reviews for a specific music track
-
-**Path Parameters:**
-- `musicId`: ID of the music
+**Access Level:** ADMIN
 
 **Query Parameters:**
-- `page` (optional): Page number (default: 0)
-- `size` (optional): Page size (default: 10)
+- `page` (int, default: 0): Page number
+- `size` (int, default: 10): Page size
+- `status` (String, optional): Filter by order status
 
-**Success Response (200):**
+#### 2. Refund Order
+**Endpoint:** `PUT /api/admin/orders/{orderId}/refund`
+
+**Access Level:** ADMIN
+
+### Analytics and Reports
+
+#### 1. System Overview
+**Endpoint:** `GET /api/admin/analytics/overview`
+
+**Access Level:** ADMIN
+
+**Description:** Get comprehensive system statistics
+
+**Response (Success - 200 OK):**
 ```json
 {
-  "content": [
-    {
-      "id": 1,
-      "musicId": 5,
-      "username": "john_doe",
-      "customerName": "John Doe",
-      "rating": 5,
-      "comment": "Great song!",
-      "createdAt": "2024-01-15T10:30:00",
-      "updatedAt": "2024-01-15T10:30:00",
-      "isOwnReview": false
-    }
-  ],
-  "totalElements": 12,
-  "totalPages": 2,
-  "size": 10,
-  "number": 0
+  "totalUsers": 1250,
+  "totalMusic": 3420,
+  "totalOrders": 5670,
+  "totalRevenue": 45230.50,
+  "activeTickets": 23
 }
 ```
 
-### 5. Get User's Review for Music
-**Endpoint:** `GET /api/reviews/music/{musicId}/my-review`
+#### 2. Detailed Analytics
+**Endpoint:** `GET /api/admin/analytics/detailed`
 
-**Access Level:** CUSTOMER
+**Access Level:** ADMIN
 
-**Description:** Get the current user's review for a specific music track
+**Description:** Get detailed analytics including ticket statistics
 
-**Path Parameters:**
-- `musicId`: ID of the music
-
-**Success Response (200):**
+**Response (Success - 200 OK):**
 ```json
 {
-  "id": 1,
-  "musicId": 5,
-  "username": "john_doe",
-  "customerName": "John Doe",
-  "rating": 5,
-  "comment": "Great song!",
-  "createdAt": "2024-01-15T10:30:00",
-  "updatedAt": "2024-01-15T10:30:00",
-  "isOwnReview": true
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **404**: Review not found
-
-### 6. Get Review Statistics
-**Endpoint:** `GET /api/reviews/music/{musicId}/stats`
-
-**Access Level:** PUBLIC
-
-**Description:** Get comprehensive review statistics for a music track (uses cached data for better performance)
-
-**Path Parameters:**
-- `musicId`: ID of the music
-
-**Success Response (200):**
-```json
-{
-  "totalReviews": 12,
-  "averageRating": 4.25,
-  "ratingDistribution": {
-    "1": 0,
-    "2": 1,
-    "3": 2,
-    "4": 4,
-    "5": 5
-  }
-}
-```
-
----
-
-## Order Endpoints (Enhanced)
-
-### 1. Get User Orders
-**Endpoint:** `GET /api/orders`
-
-**Access Level:** CUSTOMER
-
-**Description:** Get user's order history with pagination
-
-**Query Parameters:**
-- `page` (optional): Page number (default: 0)
-- `size` (optional): Page size (default: 10)
-
-**Success Response (200):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "orderDate": "2024-01-15T10:30:00",
-      "status": "COMPLETED",
-      "totalAmount": 29.97,
-      "items": [
-        {
-          "id": 1,
-          "musicName": "Song Title",
-          "artistName": "Artist Name",
-          "price": 9.99,
-          "quantity": 1
-        }
-      ]
-    }
-  ],
-  "totalElements": 5,
-  "totalPages": 1,
-  "size": 10,
-  "number": 0
-}
-```
-
-### 2. Get Order Details
-**Endpoint:** `GET /api/orders/{orderId}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Get detailed information about a specific order
-
-**Path Parameters:**
-- `orderId`: ID of the order
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "orderDate": "2024-01-15T10:30:00",
-  "status": "COMPLETED",
-  "totalAmount": 29.97,
-  "paymentMethod": "CREDIT_CARD",
-  "items": [
-    {
-      "id": 1,
-      "musicName": "Song Title",
-      "artistName": "Artist Name",
-      "price": 9.99,
-      "quantity": 1,
-      "totalPrice": 9.99
-    }
+  "userGrowth": "User growth analytics data",
+  "salesAnalytics": "Sales analytics data",
+  "musicAnalytics": "Music analytics data",
+  "ticketAnalytics": [
+    ["OPEN", 15],
+    ["IN_PROGRESS", 8],
+    ["CLOSED", 120],
+    ["URGENT", 3]
   ]
 }
 ```
 
-**Error Responses:**
-- **401**: Authentication required
-- **403**: Can only view own orders
-- **404**: Order not found
+#### 3. Generate Comprehensive Report
+**Endpoint:** `GET /api/admin/reports/comprehensive`
+
+**Access Level:** ADMIN
+
+**Query Parameters:**
+- `startDate` (LocalDate, optional): Start date for report
+- `endDate` (LocalDate, optional): End date for report
+- `format` (String, default: "pdf"): Report format
+
+### System Settings
+
+#### 1. Create System Backup
+**Endpoint:** `POST /api/admin/settings/backup`
+
+**Access Level:** ADMIN
+
+**Description:** Initiate system backup
 
 ---
 
-## Technical Implementation Details
+## Admin Ticket Management
 
-### Enhanced Rating System
-- **Cached Averages**: Music tracks store `averageRating` and `totalReviews` fields for instant access
-- **Automatic Updates**: Rating statistics are recalculated automatically when reviews are created, updated, or deleted
-- **Performance Optimized**: No need to calculate averages on-demand, resulting in faster API responses
-- **Data Integrity**: Rating updates are atomic and handle edge cases gracefully
+### 1. Get All Tickets (Admin)
+**Endpoint:** `GET /api/admin/tickets`
 
-### Improved Cart Operations
-- **Lazy Loading Fixed**: Resolved Hibernate LazyInitializationException with proper eager fetching
-- **Better Error Handling**: Specific HTTP status codes and detailed error messages
-- **Total Calculation**: Fixed null value constraints in checkout process
-- **Transaction Safety**: All cart operations are properly transactional
+**Access Level:** ADMIN
 
-### Database Schema Updates
-```sql
--- Music table enhancements
-ALTER TABLE music ADD COLUMN average_rating DECIMAL(3,2) DEFAULT 0.0;
-ALTER TABLE music ADD COLUMN total_reviews INTEGER DEFAULT 0;
+**Description:** Retrieve all support tickets with optional status filtering
 
--- These fields are automatically maintained by the application
-```
+**Query Parameters:**
+- `status` (String, optional): Filter by ticket status (OPEN, IN_PROGRESS, URGENT, CLOSED)
 
-### Error Handling Standards
-- **401**: Authentication required
-- **403**: Forbidden/Unauthorized access
-- **404**: Resource not found
-- **409**: Conflict (e.g., already in cart)
-- **400**: Bad request/validation errors
-- **500**: Internal server error
-
----
-
-## Security Features
-- JWT-based authentication
-- Role-based access control
-- CORS enabled for frontend integration
-- Request validation and sanitization
-- Secure password handling
-
-## Performance Optimizations
-- Cached rating calculations
-- Optimized database queries with eager fetching
-- Efficient pagination
-- Transactional consistency
-
----
-
-## Playlist Endpoints
-
-### Overview
-The playlist functionality allows customers to create and manage personal music collections. Users can only add music tracks they have purchased to their playlists, ensuring proper licensing compliance.
-
-### Key Features
-- Create, read, update, and delete playlists
-- Add/remove purchased music tracks to/from playlists
-- Automatic track count management
-- User-specific playlist isolation (security)
-- Duplicate name prevention per user
-
----
-
-### 1. Create Playlist
-**Endpoint:** `POST /api/playlists`
-
-**Access Level:** CUSTOMER
-
-**Description:** Create a new playlist for the authenticated customer
-
-**Request Headers:**
-```
-Content-Type: application/json
-Authorization: Bearer <jwt_token>
-```
-
-**Request Body:**
+**Response (Success - 200 OK):**
 ```json
-{
-  "name": "string (required, max 100 characters)"
-}
-```
-
-**Success Response (201):**
-```json
-{
-  "success": true,
-  "message": "Playlist created successfully",
-  "data": {
+[
+  {
     "id": 1,
-    "name": "My Favorite Songs",
-    "customerId": 1,
-    "customerUsername": "john_doe",
-    "trackCount": 0,
-    "createdAt": "2024-01-15 10:30:00",
-    "updatedAt": "2024-01-15 10:30:00"
-  }
-}
-```
-
-**Error Responses:**
-- **400**: Validation errors (empty name, name too long)
-- **401**: Authentication required
-- **404**: Customer not found
-- **409**: Playlist with same name already exists
-- **500**: Internal server error
-
-### 2. Get All User Playlists
-**Endpoint:** `GET /api/playlists`
-
-**Access Level:** CUSTOMER
-
-**Description:** Retrieve all playlists belonging to the authenticated customer
-
-**Request Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
-
-**Success Response (200):**
-```json
-{
-  "success": true,
-  "message": "Playlists retrieved successfully",
-  "count": 2,
-  "data": [
-    {
+    "subject": "Payment Issue",
+    "status": "OPEN",
+    "customer": {
       "id": 1,
-      "name": "My Favorite Songs",
-      "customerId": 1,
-      "customerUsername": "john_doe",
-      "trackCount": 5,
-      "createdAt": "2024-01-15 10:30:00",
-      "updatedAt": "2024-01-15 11:45:00"
+      "username": "john_doe"
     },
-    {
-      "id": 2,
-      "name": "Workout Mix",
-      "customerId": 1,
-      "customerUsername": "john_doe",
-      "trackCount": 8,
-      "createdAt": "2024-01-16 09:15:00",
-      "updatedAt": "2024-01-16 14:20:00"
-    }
-  ]
-}
-```
-
-**Error Responses:**
-- **401**: Authentication required
-- **404**: Customer not found
-- **500**: Internal server error
-
-### 3. Get Playlist with Music Tracks
-**Endpoint:** `GET /api/playlists/{id}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Retrieve a specific playlist with all its music tracks (only owner can access)
-
-**Path Parameters:**
-- `id`: Playlist ID
-
-**Request Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
-
-**Success Response (200):**
-```json
-{
-  "success": true,
-  "message": "Playlist retrieved successfully",
-  "data": {
-    "id": 1,
-    "name": "My Favorite Songs",
-    "customerId": 1,
-    "customerUsername": "john_doe",
-    "trackCount": 2,
-    "createdAt": "2024-01-15 10:30:00",
-    "updatedAt": "2024-01-15 11:45:00",
-    "musics": [
-      {
-        "id": 5,
-        "name": "Amazing Song",
-        "description": "A wonderful track",
-        "price": 9.99,
-        "imageUrl": "/uploads/covers/song1.jpg",
-        "audioFilePath": "/uploads/music/song1.mp3",
-        "category": "Pop",
-        "artist": "artist_username",
-        "album": "Greatest Hits",
-        "genre": "Pop",
-        "releaseYear": 2024,
-        "createdAt": "2024-01-10T08:00:00"
-      },
-      {
-        "id": 8,
-        "name": "Another Hit",
-        "description": "Another great song",
-        "price": 12.99,
-        "imageUrl": "/uploads/covers/song2.jpg",
-        "audioFilePath": "/uploads/music/song2.mp3",
-        "category": "Rock",
-        "artist": "rock_artist",
-        "album": "Rock Collection",
-        "genre": "Rock",
-        "releaseYear": 2023,
-        "createdAt": "2024-01-12T14:30:00"
-      }
-    ]
+    "assignedStaff": null,
+    "createdAt": "2025-09-21T10:30:00",
+    "closedAt": null,
+    "messages": [...]
   }
-}
+]
 ```
 
-**Error Responses:**
-- **401**: Authentication required
-- **404**: Playlist not found or not owned by customer
-- **500**: Internal server error
+### 2. Get Ticket Details (Admin)
+**Endpoint:** `GET /api/admin/tickets/{ticketId}`
 
-### 4. Update Playlist Name
-**Endpoint:** `PUT /api/playlists/{id}`
+**Access Level:** ADMIN
 
-**Access Level:** CUSTOMER
+**Description:** Get detailed information about a specific ticket
 
-**Description:** Update the name of an existing playlist (only owner can update)
+### 3. Get Ticket Messages (Admin)
+**Endpoint:** `GET /api/admin/tickets/{ticketId}/messages`
 
-**Path Parameters:**
-- `id`: Playlist ID
+**Access Level:** ADMIN
 
-**Request Headers:**
-```
-Content-Type: application/json
-Authorization: Bearer <jwt_token>
-```
+**Description:** Get all messages in a ticket conversation (admin view)
+
+### 4. Reply to Ticket (Admin)
+**Endpoint:** `POST /api/admin/tickets/{ticketId}/reply`
+
+**Access Level:** ADMIN
+
+**Description:** Add an admin reply to a ticket conversation
 
 **Request Body:**
 ```json
 {
-  "name": "string (required, max 100 characters)"
+  "message": "string (required, admin reply content)"
 }
 ```
 
-**Success Response (200):**
+**Response (Success - 200 OK):**
 ```json
 {
-  "success": true,
-  "message": "Playlist updated successfully",
-  "data": {
+  "id": 3,
+  "content": "We've escalated your issue to our technical team.",
+  "timestamp": "2025-09-21T11:00:00",
+  "isFromStaff": true,
+  "customer": null,
+  "staff": {
     "id": 1,
-    "name": "Updated Playlist Name",
-    "customerId": 1,
-    "customerUsername": "john_doe",
-    "trackCount": 5,
-    "createdAt": "2024-01-15 10:30:00",
-    "updatedAt": "2024-01-15 12:00:00"
+    "username": "admin_user"
   }
 }
 ```
 
-**Error Responses:**
-- **400**: Validation errors or name conflicts
-- **401**: Authentication required
-- **404**: Playlist not found or not owned by customer
-- **409**: Playlist with same name already exists
-- **500**: Internal server error
+### 5. Update Ticket Status (Admin)
+**Endpoint:** `PUT /api/admin/tickets/{ticketId}/status`
 
-### 5. Delete Playlist
-**Endpoint:** `DELETE /api/playlists/{id}`
+**Access Level:** ADMIN
 
-**Access Level:** CUSTOMER
+**Description:** Update the status of any ticket
 
-**Description:** Delete a playlist (only owner can delete)
-
-**Path Parameters:**
-- `id`: Playlist ID
-
-**Request Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
-
-**Success Response (200):**
+**Request Body:**
 ```json
 {
-  "success": true,
-  "message": "Playlist deleted successfully"
+  "status": "string (required: OPEN, IN_PROGRESS, URGENT, CLOSED)"
 }
 ```
 
-**Error Responses:**
-- **401**: Authentication required
-- **404**: Playlist not found or not owned by customer
-- **500**: Internal server error
+### 6. Assign Ticket (Admin)
+**Endpoint:** `POST /api/admin/tickets/{ticketId}/assign`
 
-### 6. Add Music to Playlist
-**Endpoint:** `POST /api/playlists/{id}/music/{musicId}`
+**Access Level:** ADMIN
 
-**Access Level:** CUSTOMER
+**Description:** Assign a ticket to the authenticated admin
 
-**Description:** Add a purchased music track to a playlist (requires music ownership)
+### 7. Close Ticket (Admin)
+**Endpoint:** `POST /api/admin/tickets/{ticketId}/close`
 
-**Path Parameters:**
-- `id`: Playlist ID
-- `musicId`: Music track ID
+**Access Level:** ADMIN
 
-**Request Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
+**Description:** Mark any ticket as closed
 
-**Success Response (200):**
+### 8. Reopen Ticket (Admin)
+**Endpoint:** `POST /api/admin/tickets/{ticketId}/reopen`
+
+**Access Level:** ADMIN
+
+**Description:** Reopen any closed ticket
+
+### 9. Delete Ticket (Admin)
+**Endpoint:** `DELETE /api/admin/tickets/{ticketId}`
+
+**Access Level:** ADMIN
+
+**Description:** Permanently delete a ticket (admin only)
+
+### 10. Search Tickets (Admin)
+**Endpoint:** `GET /api/admin/tickets/search`
+
+**Access Level:** ADMIN
+
+**Description:** Search all tickets by content in subject or messages
+
+**Query Parameters:**
+- `query` (String, required): Search term
+
+### 11. Get Urgent Tickets (Admin)
+**Endpoint:** `GET /api/admin/tickets/urgent`
+
+**Access Level:** ADMIN
+
+**Description:** Get all tickets marked as urgent
+
+### 12. Get Unassigned Tickets (Admin)
+**Endpoint:** `GET /api/admin/tickets/unassigned`
+
+**Access Level:** ADMIN
+
+**Description:** Get all tickets that haven't been assigned to any staff member
+
+### 13. Get Ticket Statistics (Admin)
+**Endpoint:** `GET /api/admin/tickets/stats`
+
+**Access Level:** ADMIN
+
+**Description:** Get comprehensive ticket statistics and status distribution
+
+**Response (Success - 200 OK):**
 ```json
-{
-  "success": true,
-  "message": "Music added to playlist successfully",
-  "data": {
-    "id": 1,
-    "name": "My Favorite Songs",
-    "customerId": 1,
-    "customerUsername": "john_doe",
-    "trackCount": 3,
-    "createdAt": "2024-01-15 10:30:00",
-    "updatedAt": "2024-01-15 12:15:00",
-    "musics": [
-      {
-        "id": 5,
-        "name": "Amazing Song",
-        "description": "A wonderful track",
-        "price": 9.99,
-        "imageUrl": "/uploads/covers/song1.jpg",
-        "audioFilePath": "/uploads/music/song1.mp3",
-        "category": "Pop",
-        "artist": "artist_username",
-        "album": "Greatest Hits",
-        "genre": "Pop",
-        "releaseYear": 2024,
-        "createdAt": "2024-01-10T08:00:00"
-      }
-    ]
-  }
-}
+[
+  ["OPEN", 15],
+  ["IN_PROGRESS", 8],
+  ["CLOSED", 120],
+  ["URGENT", 3]
+]
 ```
-
-**Error Responses:**
-- **400**: Music already in playlist or not purchased by user
-- **401**: Authentication required
-- **404**: Playlist not found, music not found, or not owned by customer
-- **409**: Music already exists in playlist
-- **500**: Internal server error
-
-**Business Rules:**
-- Users can only add music they have purchased
-- Duplicate music tracks in the same playlist are not allowed
-- Track count is automatically updated
-
-### 7. Remove Music from Playlist
-**Endpoint:** `DELETE /api/playlists/{id}/music/{musicId}`
-
-**Access Level:** CUSTOMER
-
-**Description:** Remove a music track from a playlist
-
-**Path Parameters:**
-- `id`: Playlist ID
-- `musicId`: Music track ID
-
-**Request Headers:**
-```
-Authorization: Bearer <jwt_token>
-```
-
-**Success Response (200):**
-```json
-{
-  "success": true,
-  "message": "Music removed from playlist successfully",
-  "data": {
-    "id": 1,
-    "name": "My Favorite Songs",
-    "customerId": 1,
-    "customerUsername": "john_doe",
-    "trackCount": 2,
-    "createdAt": "2024-01-15 10:30:00",
-    "updatedAt": "2024-01-15 12:30:00",
-    "musics": [
-      {
-        "id": 8,
-        "name": "Another Hit",
-        "description": "Another great song",
-        "price": 12.99,
-        "imageUrl": "/uploads/covers/song2.jpg",
-        "audioFilePath": "/uploads/music/song2.mp3",
-        "category": "Rock",
-        "artist": "rock_artist",
-        "album": "Rock Collection",
-        "genre": "Rock",
-        "releaseYear": 2023,
-        "createdAt": "2024-01-12T14:30:00"
-      }
-    ]
-  }
-}
-```
-
-**Error Responses:**
-- **400**: Music not in playlist
-- **401**: Authentication required
-- **404**: Playlist not found, music not found, or not owned by customer
-- **500**: Internal server error
 
 ---
 
-## Playlist Technical Implementation
+## Customer Support Ticket System (NEW CHAT-BASED)
 
-### Database Schema
-```sql
--- Playlists table
-CREATE TABLE playlists (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    customer_id BIGINT NOT NULL,
-    track_count INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP,
-    FOREIGN KEY (customer_id) REFERENCES customers(id),
-    INDEX idx_customer_name (customer_id, name)
-);
+### API Flow Overview
+The new chat-based ticket system follows this optimized flow:
 
--- Playlist-Music junction table
-CREATE TABLE playlist_music (
-    playlist_id BIGINT NOT NULL,
-    music_id BIGINT NOT NULL,
-    PRIMARY KEY (playlist_id, music_id),
-    FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
-    FOREIGN KEY (music_id) REFERENCES music(id) ON DELETE CASCADE
-);
+1. **Create Ticket**: `POST /api/customer/support/ticket` - Returns clean ticket info without messages (faster response)
+2. **Get Conversation**: `GET /api/customer/support/ticket/{ticketId}/messages` - Returns full chat conversation
+3. **Add Message**: `POST /api/customer/support/ticket/{ticketId}/message` - Adds new message to conversation
+
+This separation provides better performance and cleaner API design.
+
+### 1. Create Support Ticket
+**Endpoint:** `POST /api/customer/support/ticket`
+
+**Access Level:** CUSTOMER
+
+**Description:** Create a new support ticket with initial message. **Note: Returns ticket info without messages for better performance. Use the messages endpoint to get the full conversation.**
+
+**Request Body:**
+```json
+{
+  "subject": "string (required, max 255 characters)",
+  "description": "string (required, initial message)"
+}
 ```
 
-### Security Features
-- **Ownership Verification**: Users can only access/modify their own playlists
-- **Purchase Validation**: Only purchased music can be added to playlists
-- **JWT Authentication**: All endpoints require valid authentication
-- **Input Validation**: Comprehensive validation using Jakarta Bean Validation
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "subject": "Payment Issue",
+  "status": "OPEN",
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com"
+  },
+  "assignedStaff": null,
+  "createdAt": "2025-09-21T10:30:00",
+  "closedAt": null
+}
+```
 
-### Performance Optimizations
-- **Lazy Loading**: Customer relationship uses lazy loading to prevent N+1 queries
-- **Automatic Track Count**: Track count is maintained automatically for quick access
-- **Composite Indexes**: Database indexes on (customer_id, name) for efficient queries
-- **Transactional Operations**: All modifications are properly transactional
+**Note:** The response does NOT include messages to avoid lazy loading issues and improve performance. Use the dedicated messages endpoint to get the conversation.
 
-### Business Logic
-- **Unique Names**: Playlist names must be unique per customer (case-insensitive)
-- **Purchase Requirement**: Users can only add music they have purchased
-- **Duplicate Prevention**: Same music cannot be added twice to a playlist
-- **Automatic Updates**: Updated timestamps are automatically managed
+### 2. Get Customer's Tickets
+**Endpoint:** `GET /api/customer/support/tickets`
+
+**Access Level:** CUSTOMER
+
+**Description:** Retrieve all tickets created by the authenticated customer (without messages for performance)
+
+**Response (Success - 200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "subject": "Payment Issue",
+    "status": "IN_PROGRESS",
+    "customer": {
+      "id": 1,
+      "username": "john_doe",
+      "firstName": "John",
+      "lastName": "Doe"
+    },
+    "assignedStaff": {
+      "id": 1,
+      "username": "support_agent"
+    },
+    "createdAt": "2025-09-21T10:30:00",
+    "closedAt": null
+  }
+]
+```
+
+### 3. Add Message to Ticket (Customer Reply)
+**Endpoint:** `POST /api/customer/support/ticket/{ticketId}/message`
+
+**Access Level:** CUSTOMER
+
+**Description:** Add a new message to an existing ticket conversation
+
+**Path Parameters:**
+- `ticketId` (Long): ID of the ticket
+
+**Request Body:**
+```json
+{
+  "content": "string (required, message content)"
+}
+```
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 5,
+  "content": "Thank you for your help!",
+  "timestamp": "2025-09-21T11:45:00",
+  "isFromStaff": false,
+  "customer": {
+    "id": 1,
+    "username": "john_doe"
+  },
+  "staff": null
+}
+```
+
+### 4. Get Ticket Conversation
+**Endpoint:** `GET /api/customer/support/ticket/{ticketId}/messages`
+
+**Access Level:** CUSTOMER
+
+**Description:** Retrieve all messages for a specific ticket (complete chat conversation)
+
+**Path Parameters:**
+- `ticketId` (Long): ID of the ticket
+
+**Security:** Customers can only access messages for their own tickets.
+
+**Response (Success - 200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "content": "I'm having trouble with my payment",
+    "timestamp": "2025-09-21T10:30:00",
+    "isFromStaff": false,
+    "customer": {
+      "id": 1,
+      "username": "john_doe"
+    },
+    "staff": null
+  },
+  {
+    "id": 2,
+    "content": "I can help you with that. What payment method are you using?",
+    "timestamp": "2025-09-21T10:35:00",
+    "isFromStaff": true,
+    "customer": null,
+    "staff": {
+      "id": 1,
+      "username": "support_agent"
+    }
+  },
+  {
+    "id": 3,
+    "content": "I'm using PayPal but the payment keeps failing",
+    "timestamp": "2025-09-21T10:40:00",
+    "isFromStaff": false,
+    "customer": {
+      "id": 1,
+      "username": "john_doe"
+    },
+    "staff": null
+  }
+]
+```
 
 ---
 
-*Last Updated: September 21, 2025*
-*API Version: 2.1 (Enhanced with Playlist Management)*
+## Staff Support Management
+
+### 1. Get All Tickets (Staff)
+**Endpoint:** `GET /api/staff/tickets`
+
+**Access Level:** STAFF
+
+**Description:** Retrieve all support tickets with optional status filtering
+
+**Query Parameters:**
+- `status` (String, optional): Filter by ticket status
+
+### 2. Get Urgent Tickets (Staff)
+**Endpoint:** `GET /api/staff/tickets/urgent`
+
+**Access Level:** STAFF
+
+### 3. Get Tickets Needing Attention
+**Endpoint:** `GET /api/staff/tickets/needs-attention`
+
+**Access Level:** STAFF
+
+### 4. Get Unassigned Tickets (Staff)
+**Endpoint:** `GET /api/staff/tickets/unassigned`
+
+**Access Level:** STAFF
+
+### 5. Reply to Ticket (Staff)
+**Endpoint:** `POST /api/staff/tickets/{ticketId}/reply`
+
+**Access Level:** STAFF
+
+**Request Body:**
+```json
+{
+  "message": "string (required, staff reply content)"
+}
+```
+
+### 6. Assign Ticket (Staff)
+**Endpoint:** `POST /api/staff/tickets/{ticketId}/assign`
+
+**Access Level:** STAFF
+
+### 7. Update Ticket Status (Staff)
+**Endpoint:** `PUT /api/staff/tickets/{ticketId}/status`
+
+**Access Level:** STAFF
+
+### 8. Close Ticket (Staff)
+**Endpoint:** `POST /api/staff/tickets/{ticketId}/close`
+
+**Access Level:** STAFF
+
+### 9. Search Tickets (Staff)
+**Endpoint:** `GET /api/staff/tickets/search`
+
+**Access Level:** STAFF
+
+**Query Parameters:**
+- `query` (String, required): Search term
+
+---
+
+## Ticket Status Values
+
+The ticket system supports the following status values:
+
+- **OPEN**: New ticket, awaiting staff assignment
+- **IN_PROGRESS**: Ticket assigned to staff and being worked on
+- **URGENT**: High priority ticket requiring immediate attention
+- **CLOSED**: Ticket resolved and closed
+
+## Ticket Message Structure
+
+Each ticket contains multiple messages forming a conversation:
+
+```json
+{
+  "id": "Long (message ID)",
+  "content": "String (message content)",
+  "timestamp": "LocalDateTime (when message was sent)",
+  "isFromStaff": "Boolean (true if from staff, false if from customer)",
+  "customer": "Customer object (if message from customer)",
+  "staff": "Staff object (if message from staff)"
+}
+```
+
+## Key Features
+
+### 1. Multi-Level Management
+- **Customer**: Create tickets, add messages, view own tickets
+- **Staff**: Manage assigned tickets, reply to customers, update status
+- **Admin**: Full control over all tickets, delete tickets, comprehensive analytics
+
+### 2. Chat-Like Experience
+- Multiple messages per ticket creating conversation flow
+- Clear distinction between customer and staff messages
+- Chronological message ordering for easy conversation following
+
+### 3. Comprehensive Analytics
+- System overview with key metrics
+- Ticket status distribution
+- User, music, and order analytics
+- Detailed reporting capabilities
+
+### 4. Simplified Architecture
+- No complex pagination for university project requirements
+- Straightforward REST endpoints
+- Clear separation of customer, staff, and admin functionalities
+
+---
+
+## Error Handling
+
+All endpoints return consistent error responses:
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "error": "Detailed error message describing what went wrong"
+}
+```
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "error": "Unauthorized access"
+}
+```
+
+**Error Response (403 Forbidden):**
+```json
+{
+  "error": "Access denied"
+}
+```
+
+---
+
+## Implementation Notes
+
+### Database Schema Changes
+The new system requires these tables:
+- `tickets` - Main ticket information with staff assignment
+- `ticket_messages` - Individual messages within tickets
+
+### Migration Considerations
+- Existing single message/reply tickets need migration to new message format
+- Staff assignment functionality requires proper staff user management
+- All pagination-based queries replaced with simple list operations
+
+### Performance Considerations
+- Messages loaded lazily to improve ticket list performance
+- Search functionality works across both subjects and message content
+- Simple list operations replace complex paginated queries for better maintainability
+
+This comprehensive ticket system provides a modern, chat-like support experience while maintaining the structure needed for effective customer service management across multiple user roles.

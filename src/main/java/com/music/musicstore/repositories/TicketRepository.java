@@ -2,8 +2,7 @@ package com.music.musicstore.repositories;
 
 import com.music.musicstore.models.support.Ticket;
 import com.music.musicstore.models.users.Customer;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.music.musicstore.models.users.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,11 +15,15 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     // Find tickets by customer
     List<Ticket> findByCustomer(Customer customer);
-    Page<Ticket> findByCustomer(Customer customer, Pageable pageable);
 
     // Find tickets by status
     List<Ticket> findByStatus(String status);
-    Page<Ticket> findByStatus(String status, Pageable pageable);
+
+    // Find tickets by assigned staff
+    List<Ticket> findByAssignedStaff(Staff staff);
+
+    // Find unassigned tickets
+    List<Ticket> findByAssignedStaffIsNull();
 
     // Count tickets by status
     long countByStatus(String status);
@@ -32,31 +35,32 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByCustomerAndStatus(Customer customer, String status);
     List<Ticket> findByCustomerAndStatusIn(Customer customer, List<String> statuses);
 
-    // Search functionality
-    List<Ticket> findBySubjectContainingIgnoreCaseOrMessageContainingIgnoreCase(String subject, String message);
-    Page<Ticket> findBySubjectContainingIgnoreCaseOrMessageContainingIgnoreCase(String subject, String message, Pageable pageable);
+    // Search functionality - search in subject and messages
+    @Query("SELECT DISTINCT t FROM Ticket t LEFT JOIN t.messages m WHERE " +
+           "LOWER(t.subject) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(m.content) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
+    List<Ticket> findBySubjectOrMessageContentContaining(@Param("searchTerm") String searchTerm);
 
     // Find tickets by customer with search
-    @Query("SELECT t FROM Ticket t WHERE t.customer = :customer AND (LOWER(t.subject) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(t.message) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    @Query("SELECT DISTINCT t FROM Ticket t LEFT JOIN t.messages m WHERE t.customer = :customer AND " +
+           "(LOWER(t.subject) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(m.content) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
     List<Ticket> findByCustomerAndSearchTerm(@Param("customer") Customer customer, @Param("searchTerm") String searchTerm);
-
-    @Query("SELECT t FROM Ticket t WHERE t.customer = :customer AND (LOWER(t.subject) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(t.message) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
-    Page<Ticket> findByCustomerAndSearchTerm(@Param("customer") Customer customer, @Param("searchTerm") String searchTerm, Pageable pageable);
 
     // Find tickets by order
     List<Ticket> findByOrder_Id(Long orderId);
 
     // Find urgent tickets
-    @Query("SELECT t FROM Ticket t WHERE t.status = 'URGENT' ORDER BY t.id DESC")
+    @Query("SELECT t FROM Ticket t WHERE t.status = 'URGENT' ORDER BY t.createdAt DESC")
     List<Ticket> findUrgentTickets();
 
-    // Find tickets needing attention (OPEN, URGENT, REPLIED)
-    @Query("SELECT t FROM Ticket t WHERE t.status IN ('OPEN', 'URGENT', 'REPLIED') ORDER BY CASE WHEN t.status = 'URGENT' THEN 1 WHEN t.status = 'REPLIED' THEN 2 ELSE 3 END, t.id DESC")
-    Page<Ticket> findTicketsNeedingAttention(int page, int size,
-                                             Pageable pageable);
+    // Find tickets needing attention (OPEN, URGENT, IN_PROGRESS)
+    @Query("SELECT t FROM Ticket t WHERE t.status IN ('OPEN', 'URGENT', 'IN_PROGRESS') " +
+           "ORDER BY CASE WHEN t.status = 'URGENT' THEN 1 WHEN t.status = 'IN_PROGRESS' THEN 2 ELSE 3 END, t.createdAt DESC")
+    List<Ticket> findTicketsNeedingAttention();
 
-    @Query("SELECT t FROM Ticket t WHERE t.status IN ('OPEN', 'URGENT', 'REPLIED') ORDER BY CASE WHEN t.status = 'URGENT' THEN 1 WHEN t.status = 'REPLIED' THEN 2 ELSE 3 END, t.id DESC")
-    Page<Ticket> findTicketsNeedingAttention(Pageable pageable);
+    // Find tickets assigned to staff
+    List<Ticket> findByAssignedStaffAndStatusIn(Staff staff, List<String> statuses);
 
     // Statistics queries
     @Query("SELECT COUNT(t) FROM Ticket t WHERE t.customer = :customer")
@@ -66,32 +70,40 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     long countByCustomerAndStatus(@Param("customer") Customer customer, @Param("status") String status);
 
     // Find recent tickets
-    @Query("SELECT t FROM Ticket t ORDER BY t.id DESC")
-    Page<Ticket> findRecentTickets(Pageable pageable);
+    @Query("SELECT t FROM Ticket t ORDER BY t.createdAt DESC")
+    List<Ticket> findRecentTickets();
 
     // Custom queries for analytics
     @Query("SELECT t.status, COUNT(t) FROM Ticket t GROUP BY t.status")
     List<Object[]> getStatusDistribution();
 
-    @Query("SELECT DATE(t.id), COUNT(t) FROM Ticket t GROUP BY DATE(t.id) ORDER BY DATE(t.id) DESC")
+    @Query("SELECT DATE(t.createdAt), COUNT(t) FROM Ticket t GROUP BY DATE(t.createdAt) ORDER BY DATE(t.createdAt) DESC")
     List<Object[]> getTicketCountByDate();
 
-    // Additional query methods for advanced filtering
+    // Find tickets by customer username
     @Query("SELECT t FROM Ticket t WHERE t.customer.username = :username")
     List<Ticket> findByCustomerUsername(@Param("username") String username);
 
+    // Find tickets by customer username and status
     @Query("SELECT t FROM Ticket t WHERE t.customer.username = :username AND t.status = :status")
-    Page<Ticket> findByCustomerUsernameAndStatus(@Param("username") String username, @Param("status") String status, Pageable pageable);
+    List<Ticket> findByCustomerUsernameAndStatus(@Param("username") String username, @Param("status") String status);
 
-    @Query("SELECT t FROM Ticket t WHERE t.status IN :statuses ORDER BY t.id DESC")
-    List<Ticket> findActiveTickets(@Param("statuses") List<String> statuses);
-
-    // Find tickets by customer and status
-    Page<Ticket> findByCustomerAndStatus(Customer customer, String status, Pageable pageable);
+    // Find active tickets (not closed)
+    @Query("SELECT t FROM Ticket t WHERE t.status != 'CLOSED' ORDER BY t.createdAt DESC")
+    List<Ticket> findActiveTickets();
 
     // Find tickets by status list
-    Page<Ticket> findByStatusIn(List<String> statuses, Pageable pageable);
+    List<Ticket> findByStatusIn(List<String> statuses);
 
-    // Find by reply content (for assignment tracking)
-    Page<Ticket> findByReplyContainingIgnoreCase(String replyContent, Pageable pageable);
+    // Find closed tickets
+    List<Ticket> findByStatusOrderByClosedAtDesc(String status);
+
+    // Find tickets assigned to specific staff member
+    List<Ticket> findByAssignedStaffOrderByCreatedAtDesc(Staff staff);
+
+    // Count unassigned tickets
+    long countByAssignedStaffIsNull();
+
+    // Count tickets assigned to staff
+    long countByAssignedStaff(Staff staff);
 }

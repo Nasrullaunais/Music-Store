@@ -62,10 +62,10 @@ public class Music {
     private Integer releaseYear;
 
     // Rating fields - better performance than calculating on-demand
-    @Column(name = "average_rating", columnDefinition = "DECIMAL(3,2) DEFAULT 0.0")
-    private Double averageRating = 0.0;
+    @Column(name = "average_rating")
+    private BigDecimal averageRating = BigDecimal.ZERO;
 
-    @Column(name = "total_reviews", columnDefinition = "INTEGER DEFAULT 0")
+    @Column(name = "total_reviews")
     private Integer totalReviews = 0;
 
 
@@ -200,11 +200,11 @@ public class Music {
         this.releaseYear = releaseYear;
     }
 
-    public Double getAverageRating() {
+    public BigDecimal getAverageRating() {
         return averageRating;
     }
 
-    public void setAverageRating(Double averageRating) {
+    public void setAverageRating(BigDecimal averageRating) {
         this.averageRating = averageRating;
     }
 

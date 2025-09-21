@@ -164,14 +164,45 @@ public class CustomerApiController {
     }
 
     @GetMapping("/support/tickets")
-    public ResponseEntity<?> getTickets(@AuthenticationPrincipal Customer customer,
-                                        @RequestParam(defaultValue = "0") int page,
-                                        @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<?> getTickets(@AuthenticationPrincipal Customer customer) {
         try {
-            return ResponseEntity.ok(ticketService.getTicketsByUsername(customer.getUsername(), page, size));
+            return ResponseEntity.ok(ticketService.getTicketsByUsername(customer.getUsername()));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch tickets: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/support/ticket/{ticketId}/message")
+    public ResponseEntity<?> addMessageToTicket(
+            @PathVariable Long ticketId,
+            @RequestBody Map<String, String> payload,
+            @AuthenticationPrincipal Customer customer) {
+        try {
+            String content = payload.get("content");
+            var message = ticketService.addCustomerMessage(ticketId, content, customer);
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to add message: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/support/ticket/{ticketId}/messages")
+    public ResponseEntity<?> getTicketMessages(@PathVariable Long ticketId,
+                                               @AuthenticationPrincipal Customer customer) {
+        try {
+            // Verify customer owns this ticket
+            var ticket = ticketService.getTicketById(ticketId);
+            if (ticket.isPresent() && ticket.get().getCustomer().getId().equals(customer.getId())) {
+                return ResponseEntity.ok(ticketService.getTicketMessages(ticketId));
+            } else {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Ticket not found or access denied"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch messages: " + e.getMessage()));
         }
     }
 

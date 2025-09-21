@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -485,7 +486,7 @@ public class ReviewService {
 
             // Update music entity
             music.setTotalReviews(totalReviews);
-            music.setAverageRating(averageRating);
+            music.setAverageRating(BigDecimal.valueOf(averageRating));
             musicRepository.save(music);
 
             logger.info("Updated rating stats for music ID {}: {} reviews, avg rating {}",

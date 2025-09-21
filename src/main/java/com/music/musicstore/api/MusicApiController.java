@@ -187,7 +187,7 @@ public class MusicApiController {
                 music.getGenre(),
                 music.getReleaseYear(),
                 music.getCreatedAt(),
-                music.getAverageRating(),
+                music.getAverageRating() != null ? music.getAverageRating().doubleValue() : 0.0,
                 music.getTotalReviews()
         );
     }

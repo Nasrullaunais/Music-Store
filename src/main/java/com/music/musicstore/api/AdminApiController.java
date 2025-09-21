@@ -6,6 +6,7 @@ import com.music.musicstore.services.UnifiedUserService;
 import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.OrderService;
 import com.music.musicstore.services.TicketService;
+import com.music.musicstore.models.users.Staff;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,7 +18,6 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -188,7 +188,10 @@ public class AdminApiController {
             overview.setTotalMusic(musicService.getTotalMusicCount());
             overview.setTotalOrders(orderService.getTotalOrdersCount());
             overview.setTotalRevenue(orderService.getTotalRevenue());
-            overview.setActiveTickets(ticketService.getActiveTicketsCount());
+            // Updated to use simple count method
+            overview.setActiveTickets(ticketService.countTicketsByStatus("OPEN") +
+                                    ticketService.countTicketsByStatus("IN_PROGRESS") +
+                                    ticketService.countTicketsByStatus("URGENT"));
 
             return ResponseEntity.ok(overview);
         } catch (Exception e) {
@@ -198,15 +201,14 @@ public class AdminApiController {
     }
 
     @GetMapping("/analytics/detailed")
-    public ResponseEntity<?> getDetailedAnalytics(
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
+    public ResponseEntity<?> getDetailedAnalytics() {
         try {
             DetailedAnalytics analytics = new DetailedAnalytics();
-            analytics.setUserGrowth(unifiedUserService.getUserGrowthAnalytics(startDate, endDate));
-            analytics.setSalesAnalytics(orderService.getSalesAnalytics(startDate, endDate));
-            analytics.setMusicAnalytics(musicService.getMusicAnalytics(startDate, endDate));
-            analytics.setTicketAnalytics(ticketService.getTicketAnalytics(startDate, endDate));
+            analytics.setUserGrowth("User growth analytics not implemented");
+            analytics.setSalesAnalytics("Sales analytics not implemented");
+            analytics.setMusicAnalytics("Music analytics not implemented");
+            // Updated to use simple status distribution
+            analytics.setTicketAnalytics(ticketService.getStatusDistribution());
 
             return ResponseEntity.ok(analytics);
         } catch (Exception e) {
@@ -241,18 +243,14 @@ public class AdminApiController {
         }
     }
 
-    // Admin Ticket Management - Full control over all tickets
+    // Admin Ticket Management - Updated for new chat system
     @GetMapping("/tickets")
-    public ResponseEntity<?> getAllTicketsAdmin(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String priority) {
+    public ResponseEntity<?> getAllTicketsAdmin(@RequestParam(required = false) String status) {
         try {
-            if (priority != null) {
-                return ResponseEntity.ok(ticketService.getTicketsByPriority(priority));
+            if (status != null) {
+                return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
             }
-            return ResponseEntity.ok(ticketService.getAllTickets(page, size, status));
+            return ResponseEntity.ok(ticketService.getAllTickets());
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch tickets: " + e.getMessage()));
@@ -269,14 +267,28 @@ public class AdminApiController {
         }
     }
 
+    @GetMapping("/tickets/{ticketId}/messages")
+    public ResponseEntity<?> getTicketMessagesAdmin(@PathVariable Long ticketId) {
+        try {
+            return ResponseEntity.ok(ticketService.getTicketMessages(ticketId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch ticket messages: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/tickets/{ticketId}/reply")
     public ResponseEntity<?> replyToTicketAdmin(
             @PathVariable Long ticketId,
             @RequestBody AdminTicketReplyRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            ticketService.replyToTicket(ticketId, request.getMessage(), userDetails.getUsername());
-            return ResponseEntity.ok(new SuccessResponse("Admin reply sent successfully"));
+            // Create a staff object for admin reply - this should be improved with proper staff lookup
+            Staff adminStaff = new Staff();
+            adminStaff.setUsername(userDetails.getUsername());
+
+            var message = ticketService.addStaffReply(ticketId, request.getMessage(), adminStaff);
+            return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to reply to ticket: " + e.getMessage()));
@@ -286,22 +298,36 @@ public class AdminApiController {
     @PutMapping("/tickets/{ticketId}/status")
     public ResponseEntity<?> updateTicketStatusAdmin(
             @PathVariable Long ticketId,
-            @RequestBody TicketStatusUpdateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestBody TicketStatusUpdateRequest request) {
         try {
-            ticketService.updateTicketStatus(ticketId, request.getStatus(), userDetails.getUsername());
-            return ResponseEntity.ok(new SuccessResponse("Ticket status updated successfully"));
+            var ticket = ticketService.updateTicketStatus(ticketId, request.getStatus());
+            return ResponseEntity.ok(ticket);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update ticket status: " + e.getMessage()));
         }
     }
 
+    @PostMapping("/tickets/{ticketId}/assign")
+    public ResponseEntity<?> assignTicketAdmin(
+            @PathVariable Long ticketId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Staff adminStaff = new Staff();
+            adminStaff.setUsername(userDetails.getUsername());
+
+            var ticket = ticketService.assignTicket(ticketId, adminStaff);
+            return ResponseEntity.ok(ticket);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to assign ticket: " + e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/tickets/{ticketId}")
     public ResponseEntity<?> deleteTicket(@PathVariable Long ticketId) {
         try {
-            // Admin can force close/delete tickets
-            ticketService.closeTicket(ticketId, "Administrative closure");
+            ticketService.deleteTicket(ticketId);
             return ResponseEntity.ok(new SuccessResponse("Ticket deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -309,65 +335,65 @@ public class AdminApiController {
         }
     }
 
-    @PostMapping("/tickets/bulk/status")
-    public ResponseEntity<?> bulkUpdateTicketsAdmin(
-            @RequestBody BulkTicketUpdateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+    @PostMapping("/tickets/{ticketId}/close")
+    public ResponseEntity<?> closeTicketAdmin(@PathVariable Long ticketId) {
         try {
-            ticketService.bulkUpdateStatus(request.getTicketIds(), request.getNewStatus(), userDetails.getUsername());
-            return ResponseEntity.ok(new SuccessResponse("Tickets updated successfully"));
+            var ticket = ticketService.closeTicket(ticketId);
+            return ResponseEntity.ok(ticket);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to update tickets: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to close ticket: " + e.getMessage()));
         }
     }
 
-    @PostMapping("/tickets/bulk/delete")
-    public ResponseEntity<?> bulkDeleteTickets(
-            @RequestBody BulkTicketDeleteRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+    @PostMapping("/tickets/{ticketId}/reopen")
+    public ResponseEntity<?> reopenTicketAdmin(@PathVariable Long ticketId) {
         try {
-            ticketService.bulkCloseTickets(request.getTicketIds(), "Administrative bulk closure");
-            return ResponseEntity.ok(new SuccessResponse("Tickets deleted successfully"));
+            var ticket = ticketService.reopenTicket(ticketId);
+            return ResponseEntity.ok(ticket);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to delete tickets: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to reopen ticket: " + e.getMessage()));
         }
     }
 
     @GetMapping("/tickets/search")
-    public ResponseEntity<?> searchTicketsAdmin(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<?> searchTicketsAdmin(@RequestParam String query) {
         try {
-            return ResponseEntity.ok(ticketService.searchTickets(query, page, size));
+            return ResponseEntity.ok(ticketService.searchTickets(query));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to search tickets: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/tickets/analytics")
-    public ResponseEntity<?> getTicketAnalytics(
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate) {
+    @GetMapping("/tickets/urgent")
+    public ResponseEntity<?> getUrgentTicketsAdmin() {
         try {
-            return ResponseEntity.ok(ticketService.getTicketAnalytics(startDate, endDate));
+            return ResponseEntity.ok(ticketService.getUrgentTickets());
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to fetch ticket analytics: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to fetch urgent tickets: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/tickets/stats/detailed")
-    public ResponseEntity<?> getDetailedTicketStats() {
+    @GetMapping("/tickets/unassigned")
+    public ResponseEntity<?> getUnassignedTicketsAdmin() {
         try {
-            Map<String, Object> detailedStats = ticketService.getDetailedTicketStats();
-            return ResponseEntity.ok(detailedStats);
+            return ResponseEntity.ok(ticketService.getUnassignedTickets());
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to fetch detailed ticket statistics: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to fetch unassigned tickets: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/tickets/stats")
+    public ResponseEntity<?> getTicketStats() {
+        try {
+            return ResponseEntity.ok(ticketService.getStatusDistribution());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch ticket statistics: " + e.getMessage()));
         }
     }
 

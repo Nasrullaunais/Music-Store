@@ -1,5 +1,6 @@
 package com.music.musicstore.models.cart;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.music.musicstore.models.users.Customer;
 import jakarta.persistence.*;
 
@@ -16,6 +17,7 @@ public class Cart {
 
     @OneToOne
     @JoinColumn(name = "customer_id")
+    @JsonBackReference  // This prevents the circular reference back to Customer
     private Customer customer;
 
     @Column

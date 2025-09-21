@@ -282,7 +282,7 @@ public class PlaylistService {
         dto.setGenre(music.getGenre());
         dto.setReleaseYear(music.getReleaseYear());
         dto.setCreatedAt(music.getCreatedAt());
-        dto.setAverageRating(music.getAverageRating());
+        dto.setAverageRating(music.getAverageRating() != null ? music.getAverageRating().doubleValue() : 0.0);
         dto.setTotalReviews(music.getTotalReviews());
         return dto;
     }
