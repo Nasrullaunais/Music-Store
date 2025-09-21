@@ -657,5 +657,415 @@ ALTER TABLE music ADD COLUMN total_reviews INTEGER DEFAULT 0;
 
 ---
 
+## Playlist Endpoints
+
+### Overview
+The playlist functionality allows customers to create and manage personal music collections. Users can only add music tracks they have purchased to their playlists, ensuring proper licensing compliance.
+
+### Key Features
+- Create, read, update, and delete playlists
+- Add/remove purchased music tracks to/from playlists
+- Automatic track count management
+- User-specific playlist isolation (security)
+- Duplicate name prevention per user
+
+---
+
+### 1. Create Playlist
+**Endpoint:** `POST /api/playlists`
+
+**Access Level:** CUSTOMER
+
+**Description:** Create a new playlist for the authenticated customer
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer <jwt_token>
+```
+
+**Request Body:**
+```json
+{
+  "name": "string (required, max 100 characters)"
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "message": "Playlist created successfully",
+  "data": {
+    "id": 1,
+    "name": "My Favorite Songs",
+    "customerId": 1,
+    "customerUsername": "john_doe",
+    "trackCount": 0,
+    "createdAt": "2024-01-15 10:30:00",
+    "updatedAt": "2024-01-15 10:30:00"
+  }
+}
+```
+
+**Error Responses:**
+- **400**: Validation errors (empty name, name too long)
+- **401**: Authentication required
+- **404**: Customer not found
+- **409**: Playlist with same name already exists
+- **500**: Internal server error
+
+### 2. Get All User Playlists
+**Endpoint:** `GET /api/playlists`
+
+**Access Level:** CUSTOMER
+
+**Description:** Retrieve all playlists belonging to the authenticated customer
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Playlists retrieved successfully",
+  "count": 2,
+  "data": [
+    {
+      "id": 1,
+      "name": "My Favorite Songs",
+      "customerId": 1,
+      "customerUsername": "john_doe",
+      "trackCount": 5,
+      "createdAt": "2024-01-15 10:30:00",
+      "updatedAt": "2024-01-15 11:45:00"
+    },
+    {
+      "id": 2,
+      "name": "Workout Mix",
+      "customerId": 1,
+      "customerUsername": "john_doe",
+      "trackCount": 8,
+      "createdAt": "2024-01-16 09:15:00",
+      "updatedAt": "2024-01-16 14:20:00"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **404**: Customer not found
+- **500**: Internal server error
+
+### 3. Get Playlist with Music Tracks
+**Endpoint:** `GET /api/playlists/{id}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Retrieve a specific playlist with all its music tracks (only owner can access)
+
+**Path Parameters:**
+- `id`: Playlist ID
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Playlist retrieved successfully",
+  "data": {
+    "id": 1,
+    "name": "My Favorite Songs",
+    "customerId": 1,
+    "customerUsername": "john_doe",
+    "trackCount": 2,
+    "createdAt": "2024-01-15 10:30:00",
+    "updatedAt": "2024-01-15 11:45:00",
+    "musics": [
+      {
+        "id": 5,
+        "name": "Amazing Song",
+        "description": "A wonderful track",
+        "price": 9.99,
+        "imageUrl": "/uploads/covers/song1.jpg",
+        "audioFilePath": "/uploads/music/song1.mp3",
+        "category": "Pop",
+        "artist": "artist_username",
+        "album": "Greatest Hits",
+        "genre": "Pop",
+        "releaseYear": 2024,
+        "createdAt": "2024-01-10T08:00:00"
+      },
+      {
+        "id": 8,
+        "name": "Another Hit",
+        "description": "Another great song",
+        "price": 12.99,
+        "imageUrl": "/uploads/covers/song2.jpg",
+        "audioFilePath": "/uploads/music/song2.mp3",
+        "category": "Rock",
+        "artist": "rock_artist",
+        "album": "Rock Collection",
+        "genre": "Rock",
+        "releaseYear": 2023,
+        "createdAt": "2024-01-12T14:30:00"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **404**: Playlist not found or not owned by customer
+- **500**: Internal server error
+
+### 4. Update Playlist Name
+**Endpoint:** `PUT /api/playlists/{id}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Update the name of an existing playlist (only owner can update)
+
+**Path Parameters:**
+- `id`: Playlist ID
+
+**Request Headers:**
+```
+Content-Type: application/json
+Authorization: Bearer <jwt_token>
+```
+
+**Request Body:**
+```json
+{
+  "name": "string (required, max 100 characters)"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Playlist updated successfully",
+  "data": {
+    "id": 1,
+    "name": "Updated Playlist Name",
+    "customerId": 1,
+    "customerUsername": "john_doe",
+    "trackCount": 5,
+    "createdAt": "2024-01-15 10:30:00",
+    "updatedAt": "2024-01-15 12:00:00"
+  }
+}
+```
+
+**Error Responses:**
+- **400**: Validation errors or name conflicts
+- **401**: Authentication required
+- **404**: Playlist not found or not owned by customer
+- **409**: Playlist with same name already exists
+- **500**: Internal server error
+
+### 5. Delete Playlist
+**Endpoint:** `DELETE /api/playlists/{id}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Delete a playlist (only owner can delete)
+
+**Path Parameters:**
+- `id`: Playlist ID
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Playlist deleted successfully"
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **404**: Playlist not found or not owned by customer
+- **500**: Internal server error
+
+### 6. Add Music to Playlist
+**Endpoint:** `POST /api/playlists/{id}/music/{musicId}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Add a purchased music track to a playlist (requires music ownership)
+
+**Path Parameters:**
+- `id`: Playlist ID
+- `musicId`: Music track ID
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Music added to playlist successfully",
+  "data": {
+    "id": 1,
+    "name": "My Favorite Songs",
+    "customerId": 1,
+    "customerUsername": "john_doe",
+    "trackCount": 3,
+    "createdAt": "2024-01-15 10:30:00",
+    "updatedAt": "2024-01-15 12:15:00",
+    "musics": [
+      {
+        "id": 5,
+        "name": "Amazing Song",
+        "description": "A wonderful track",
+        "price": 9.99,
+        "imageUrl": "/uploads/covers/song1.jpg",
+        "audioFilePath": "/uploads/music/song1.mp3",
+        "category": "Pop",
+        "artist": "artist_username",
+        "album": "Greatest Hits",
+        "genre": "Pop",
+        "releaseYear": 2024,
+        "createdAt": "2024-01-10T08:00:00"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+- **400**: Music already in playlist or not purchased by user
+- **401**: Authentication required
+- **404**: Playlist not found, music not found, or not owned by customer
+- **409**: Music already exists in playlist
+- **500**: Internal server error
+
+**Business Rules:**
+- Users can only add music they have purchased
+- Duplicate music tracks in the same playlist are not allowed
+- Track count is automatically updated
+
+### 7. Remove Music from Playlist
+**Endpoint:** `DELETE /api/playlists/{id}/music/{musicId}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Remove a music track from a playlist
+
+**Path Parameters:**
+- `id`: Playlist ID
+- `musicId`: Music track ID
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Music removed from playlist successfully",
+  "data": {
+    "id": 1,
+    "name": "My Favorite Songs",
+    "customerId": 1,
+    "customerUsername": "john_doe",
+    "trackCount": 2,
+    "createdAt": "2024-01-15 10:30:00",
+    "updatedAt": "2024-01-15 12:30:00",
+    "musics": [
+      {
+        "id": 8,
+        "name": "Another Hit",
+        "description": "Another great song",
+        "price": 12.99,
+        "imageUrl": "/uploads/covers/song2.jpg",
+        "audioFilePath": "/uploads/music/song2.mp3",
+        "category": "Rock",
+        "artist": "rock_artist",
+        "album": "Rock Collection",
+        "genre": "Rock",
+        "releaseYear": 2023,
+        "createdAt": "2024-01-12T14:30:00"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+- **400**: Music not in playlist
+- **401**: Authentication required
+- **404**: Playlist not found, music not found, or not owned by customer
+- **500**: Internal server error
+
+---
+
+## Playlist Technical Implementation
+
+### Database Schema
+```sql
+-- Playlists table
+CREATE TABLE playlists (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    customer_id BIGINT NOT NULL,
+    track_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    INDEX idx_customer_name (customer_id, name)
+);
+
+-- Playlist-Music junction table
+CREATE TABLE playlist_music (
+    playlist_id BIGINT NOT NULL,
+    music_id BIGINT NOT NULL,
+    PRIMARY KEY (playlist_id, music_id),
+    FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+    FOREIGN KEY (music_id) REFERENCES music(id) ON DELETE CASCADE
+);
+```
+
+### Security Features
+- **Ownership Verification**: Users can only access/modify their own playlists
+- **Purchase Validation**: Only purchased music can be added to playlists
+- **JWT Authentication**: All endpoints require valid authentication
+- **Input Validation**: Comprehensive validation using Jakarta Bean Validation
+
+### Performance Optimizations
+- **Lazy Loading**: Customer relationship uses lazy loading to prevent N+1 queries
+- **Automatic Track Count**: Track count is maintained automatically for quick access
+- **Composite Indexes**: Database indexes on (customer_id, name) for efficient queries
+- **Transactional Operations**: All modifications are properly transactional
+
+### Business Logic
+- **Unique Names**: Playlist names must be unique per customer (case-insensitive)
+- **Purchase Requirement**: Users can only add music they have purchased
+- **Duplicate Prevention**: Same music cannot be added twice to a playlist
+- **Automatic Updates**: Updated timestamps are automatically managed
+
+---
+
 *Last Updated: September 21, 2025*
-*API Version: 2.0 (Enhanced)*
+*API Version: 2.1 (Enhanced with Playlist Management)*

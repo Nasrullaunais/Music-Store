@@ -186,7 +186,9 @@ public class MusicApiController {
                 music.getAlbumName() != null ? music.getAlbumName() : "Unknown Album",
                 music.getGenre(),
                 music.getReleaseYear(),
-                music.getCreatedAt()
+                music.getCreatedAt(),
+                music.getAverageRating(),
+                music.getTotalReviews()
         );
     }
 }

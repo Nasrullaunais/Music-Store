@@ -17,13 +17,17 @@ public class MusicDto {
     private Integer releaseYear;
     private LocalDateTime createdAt;
 
+    // Rating fields for frontend display
+    private Double averageRating;
+    private Integer totalReviews;
+
     // Constructors
     public MusicDto() {}
 
     public MusicDto(Long id, String name, String description, BigDecimal price, 
                    String imageUrl, String audioFilePath, String category, 
                    String artist, String album, String genre, Integer releaseYear, 
-                   LocalDateTime createdAt) {
+                   LocalDateTime createdAt, Double averageRating, Integer totalReviews) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -36,6 +40,17 @@ public class MusicDto {
         this.genre = genre;
         this.releaseYear = releaseYear;
         this.createdAt = createdAt;
+        this.averageRating = averageRating;
+        this.totalReviews = totalReviews;
+    }
+
+    // Legacy constructor for backward compatibility
+    public MusicDto(Long id, String name, String description, BigDecimal price,
+                   String imageUrl, String audioFilePath, String category,
+                   String artist, String album, String genre, Integer releaseYear,
+                   LocalDateTime createdAt) {
+        this(id, name, description, price, imageUrl, audioFilePath, category,
+             artist, album, genre, releaseYear, createdAt, 0.0, 0);
     }
 
     // Getters and Setters
@@ -74,4 +89,10 @@ public class MusicDto {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Double getAverageRating() { return averageRating; }
+    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+
+    public Integer getTotalReviews() { return totalReviews; }
+    public void setTotalReviews(Integer totalReviews) { this.totalReviews = totalReviews; }
 }

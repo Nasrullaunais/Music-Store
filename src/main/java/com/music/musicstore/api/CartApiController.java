@@ -169,7 +169,8 @@ public class CartApiController {
         musicDto.setGenre(music.getGenre());
         musicDto.setReleaseYear(music.getReleaseYear());
         musicDto.setCreatedAt(music.getCreatedAt());
-
+        musicDto.setAverageRating(music.getAverageRating());
+        musicDto.setTotalReviews(music.getTotalReviews());
         return musicDto;
     }
 }

@@ -149,10 +149,18 @@ public class ArtistApiController {
         MusicDto dto = new MusicDto();
         dto.setId(music.getId());
         dto.setName(music.getName());
-        dto.setGenre(music.getGenre());
+        dto.setDescription(music.getDescription());
         dto.setPrice(music.getPrice());
-        // Use the artist username
+        dto.setImageUrl(music.getImageUrl());
+        dto.setAudioFilePath(music.getAudioFilePath());
+        dto.setCategory(music.getCategory());
         dto.setArtist(music.getArtistUsername() != null ? music.getArtistUsername() : "Unknown Artist");
+        dto.setAlbum(music.getAlbumName());
+        dto.setGenre(music.getGenre());
+        dto.setReleaseYear(music.getReleaseYear());
+        dto.setCreatedAt(music.getCreatedAt());
+        dto.setAverageRating(music.getAverageRating());
+        dto.setTotalReviews(music.getTotalReviews());
         return dto;
     }
 
