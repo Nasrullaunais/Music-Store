@@ -1,6 +1,5 @@
 package com.music.musicstore.models.music;
 
-import com.music.musicstore.models.users.Artist;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,13 +26,18 @@ public class Album {
     @Column(length = 1000)
     private String description;
 
-    @NotBlank(message = "Artist username is required")
-    @Column(name = "artist_username", nullable = false)
+    @Column(name = "artist")
     private String artistUsername;
+
+    @Column(name = "artist_username")
+    private String artistUsernameField;
 
     @NotBlank(message = "Genre is required")
     @Column(nullable = false)
     private String genre;
+
+    @Column(name = "cover")
+    private String cover;
 
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be positive")
@@ -56,20 +60,6 @@ public class Album {
 
     // Default constructor
     public Album() {}
-
-    // Constructor
-    public Album(String title, String description, String artistUsername, String genre,
-                BigDecimal price, String coverImageUrl, LocalDateTime releaseDate) {
-        this.title = title;
-        this.description = description;
-        this.artistUsername = artistUsername;
-        this.genre = genre;
-        this.price = price;
-        this.coverImageUrl = coverImageUrl;
-        this.releaseDate = releaseDate;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
 
     // Getters and Setters
     public Long getId() {
@@ -102,6 +92,15 @@ public class Album {
 
     public void setArtistUsername(String artistUsername) {
         this.artistUsername = artistUsername;
+        this.artistUsernameField = artistUsername; // Keep both fields in sync
+    }
+
+    public String getArtistUsernameField() {
+        return artistUsernameField;
+    }
+
+    public void setArtistUsernameField(String artistUsernameField) {
+        this.artistUsernameField = artistUsernameField;
     }
 
     public String getGenre() {
@@ -110,6 +109,14 @@ public class Album {
 
     public void setGenre(String genre) {
         this.genre = genre;
+    }
+
+    public String getCover() {
+        return cover;
+    }
+
+    public void setCover(String cover) {
+        this.cover = cover;
     }
 
     public BigDecimal getPrice() {

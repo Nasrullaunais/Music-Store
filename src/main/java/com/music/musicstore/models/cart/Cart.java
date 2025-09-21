@@ -21,7 +21,7 @@ public class Cart {
     @Column
     private BigDecimal totalAmount;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "cart")
     private List<CartItem> items = new ArrayList<>();
 
     public Cart() {}
@@ -84,6 +84,6 @@ public class Cart {
     }
 
     public void calculateTotalAmount() {
-
+        this.totalAmount = getTotal();
     }
 }

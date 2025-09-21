@@ -10,11 +10,11 @@ import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.ReviewService;
 import com.music.musicstore.services.TicketService;
 import com.music.musicstore.services.CustomerService;
+import com.music.musicstore.repositories.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -45,9 +45,15 @@ public class CustomerApiController {
     @Autowired
     private CustomerService customerService;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
     @GetMapping("/purchased")
     public ResponseEntity<Set<Music>> getPurchasedMusic(@AuthenticationPrincipal Customer customer) {
-        return ResponseEntity.ok(customer.getPurchasedMusic());
+        // Fetch customer with purchased music eagerly loaded to avoid LazyInitializationException
+        Customer customerWithPurchasedMusic = customerRepository.findByIdWithPurchasedMusic(customer.getId())
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        return ResponseEntity.ok(customerWithPurchasedMusic.getPurchasedMusic());
     }
 
     // Cart Management

@@ -71,6 +71,9 @@ public class ReviewService {
             Review review = new Review(music, customer, rating, comment);
             Review savedReview = reviewRepository.save(review);
 
+            // Update music rating statistics
+            updateMusicRatingStats(music);
+
             logger.info("Successfully created review for music ID: {} by customer: {} (Review ID: {})",
                        musicId, customer.getUsername(), savedReview.getId());
             return savedReview;
@@ -120,6 +123,10 @@ public class ReviewService {
             review.setUpdatedAt(LocalDateTime.now());
 
             Review updatedReview = reviewRepository.save(review);
+
+            // Update music rating statistics after updating review
+            updateMusicRatingStats(review.getMusic());
+
             logger.info("Successfully updated review ID: {} by customer: {}", reviewId, customer.getUsername());
             return updatedReview;
         } catch (Exception e) {
@@ -154,7 +161,12 @@ public class ReviewService {
                 throw new UnauthorizedException("You can only delete your own reviews");
             }
 
+            Music music = review.getMusic();
             reviewRepository.delete(review);
+
+            // Update music rating statistics after deleting review
+            updateMusicRatingStats(music);
+
             logger.info("Successfully deleted review ID: {} by customer: {}", reviewId, customer.getUsername());
         } catch (Exception e) {
             logger.error("Error deleting review ID: {} by customer: {}", reviewId, customer.getUsername(), e);
@@ -445,6 +457,43 @@ public class ReviewService {
         } catch (Exception e) {
             logger.error("Error getting artist reviews analytics for: {}", artistUsername, e);
             throw new RuntimeException("Failed to get artist reviews analytics", e);
+        }
+    }
+
+    /**
+     * Updates the music entity's average rating and total reviews count.
+     * This method is called automatically after any review create/update/delete operation.
+     */
+    private void updateMusicRatingStats(Music music) {
+        logger.debug("Updating rating statistics for music ID: {}", music.getId());
+
+        try {
+            List<Review> reviews = getReviewsByMusic(music.getId());
+
+            // Calculate new statistics
+            int totalReviews = reviews.size();
+            double averageRating = 0.0;
+
+            if (totalReviews > 0) {
+                averageRating = reviews.stream()
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+                // Round to 2 decimal places
+                averageRating = Math.round(averageRating * 100.0) / 100.0;
+            }
+
+            // Update music entity
+            music.setTotalReviews(totalReviews);
+            music.setAverageRating(averageRating);
+            musicRepository.save(music);
+
+            logger.info("Updated rating stats for music ID {}: {} reviews, avg rating {}",
+                       music.getId(), totalReviews, averageRating);
+
+        } catch (Exception e) {
+            logger.error("Error updating rating statistics for music ID: {}", music.getId(), e);
+            // Don't throw - this shouldn't fail the main review operation
         }
     }
 }

@@ -7,6 +7,7 @@ import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.CartItemRepository;
 import com.music.musicstore.repositories.CartRepository;
 import com.music.musicstore.repositories.MusicRepository;
+import com.music.musicstore.repositories.CustomerRepository;
 import com.music.musicstore.exceptions.ResourceNotFoundException;
 import com.music.musicstore.exceptions.ValidationException;
 import com.music.musicstore.exceptions.BusinessRuleException;
@@ -24,13 +25,16 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final MusicRepository musicRepository;
     private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
 
     public CartService(CartRepository cartRepository, CartItemRepository cartItemRepository,
-                      MusicRepository musicRepository, CustomerService customerService) {
+                      MusicRepository musicRepository, CustomerService customerService,
+                      CustomerRepository customerRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.musicRepository = musicRepository;
         this.customerService = customerService;
+        this.customerRepository = customerRepository;
         logger.info("CartService initialized successfully");
     }
 
@@ -43,7 +47,7 @@ public class CartService {
         }
 
         try {
-            Cart cart = cartRepository.findByCustomer(customer)
+            Cart cart = cartRepository.findByCustomerWithItems(customer)
                     .orElseGet(() -> {
                         logger.debug("Creating new cart for customer: {}", customer.getUsername());
                         Cart newCart = new Cart(customer);
@@ -94,8 +98,7 @@ public class CartService {
             }
 
             // Check if music is already purchased
-            boolean alreadyPurchased = customer.getPurchasedMusic().stream()
-                    .anyMatch(purchased -> purchased.getId().equals(musicId));
+            boolean alreadyPurchased = customerRepository.hasPurchasedMusic(customer.getId(), musicId);
 
             if (alreadyPurchased) {
                 logger.warn("Music ID: {} has already been purchased by customer: {}", musicId, customer.getUsername());
@@ -124,11 +127,15 @@ public class CartService {
             throw new BusinessRuleException("Cart is empty");
         }
 
+        // Get a fresh customer instance with purchasedMusic loaded to avoid lazy initialization issues
+        Customer managedCustomer = customerRepository.findByIdWithPurchasedMusic(customer.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer", customer.getId().toString()));
+
         for (CartItem item : cart.getItems()) {
-            customer.getPurchasedMusic().add(item.getMusic());
+            managedCustomer.getPurchasedMusic().add(item.getMusic());
         }
 
-        customerService.save(customer);
+        customerService.save(managedCustomer);
         cart.getItems().clear();
         cartRepository.save(cart);
     }
@@ -347,7 +354,7 @@ public class CartService {
         }
     }
 
-    public void saveCart(Cart cart) {
+    public Cart saveCart(Cart cart) {
         logger.debug("Saving cart: {}", cart != null ? cart.getId() : "null");
 
         if (cart == null) {
@@ -356,8 +363,11 @@ public class CartService {
         }
 
         try {
+            // Calculate and set the total before saving
+            cart.setTotalAmount(cart.getTotal());
             Cart savedCart = cartRepository.save(cart);
             logger.info("Successfully saved cart with ID: {}", savedCart.getId());
+            return savedCart;
         } catch (Exception e) {
             logger.error("Error saving cart", e);
             throw new RuntimeException("Failed to save cart", e);

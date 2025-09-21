@@ -61,6 +61,13 @@ public class Music {
     private String genre;
     private Integer releaseYear;
 
+    // Rating fields - better performance than calculating on-demand
+    @Column(name = "average_rating", columnDefinition = "DECIMAL(3,2) DEFAULT 0.0")
+    private Double averageRating = 0.0;
+
+    @Column(name = "total_reviews", columnDefinition = "INTEGER DEFAULT 0")
+    private Integer totalReviews = 0;
+
 
     // Default constructor required by JPA
     public Music() {
@@ -191,6 +198,22 @@ public class Music {
 
     public void setReleaseYear(Integer releaseYear) {
         this.releaseYear = releaseYear;
+    }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+
+    public Integer getTotalReviews() {
+        return totalReviews;
+    }
+
+    public void setTotalReviews(Integer totalReviews) {
+        this.totalReviews = totalReviews;
     }
 
     @PrePersist

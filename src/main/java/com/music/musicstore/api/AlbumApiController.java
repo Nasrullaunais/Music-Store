@@ -2,7 +2,6 @@ package com.music.musicstore.api;
 
 import com.music.musicstore.dto.AlbumDto;
 import com.music.musicstore.models.music.Album;
-import com.music.musicstore.models.users.Artist;
 import com.music.musicstore.repositories.ArtistRepository;
 import com.music.musicstore.services.AlbumService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,6 +97,7 @@ public class AlbumApiController {
             album.setGenre(request.getGenre());
             album.setPrice(request.getPrice());
             album.setCoverImageUrl(request.getCoverImageUrl());
+            album.setCover(request.getCoverImageUrl()); // Set cover field
             album.setReleaseDate(request.getReleaseDate());
 
             Album savedAlbum = albumService.saveAlbum(album);
@@ -122,7 +122,7 @@ public class AlbumApiController {
             albumDetails.setGenre(request.getGenre());
             albumDetails.setPrice(request.getPrice());
             albumDetails.setCoverImageUrl(request.getCoverImageUrl());
-            albumDetails.setReleaseDate(request.getReleaseDate());
+            albumDetails.setCover(request.getCoverImageUrl()); // Set cover field
 
             // If artist is being updated
             if (request.getArtistUsername() != null) {

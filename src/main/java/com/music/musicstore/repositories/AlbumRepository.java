@@ -9,11 +9,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AlbumRepository extends JpaRepository<Album, Long> {
 
-
+    Optional<Album> findByTitle(String title);
     // Find albums by genre
     List<Album> findByGenre(String genre);
 
@@ -25,7 +26,7 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
 
     // Count albums by artist username
     long countByArtistUsername(String artistUsername);
-    
+
     // Find albums by artist username (non-paginated)
     List<Album> findByArtistUsername(String artistUsername);
 

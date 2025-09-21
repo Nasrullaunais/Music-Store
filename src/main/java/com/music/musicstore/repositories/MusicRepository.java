@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +42,7 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
             String name, String artistUsername, Pageable pageable);
 
 
+    Optional<Music> findByName(String name);
     Optional<Music> findByNameContainingIgnoreCase(String name);
 
     // Paginated version for better performance
@@ -57,9 +59,9 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
     Double getAverageRating();
 
     // Additional search and filter methods
-    List<Music> findByPriceBetween(Double minPrice, Double maxPrice);
+    List<Music> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
 
-    Page<Music> findByPriceBetween(Double minPrice, Double maxPrice, Pageable pageable);
+    Page<Music> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 
     // Find music by multiple criteria
     @Query("SELECT m FROM Music m WHERE " +
@@ -69,8 +71,8 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
            "(:maxPrice IS NULL OR m.price <= :maxPrice)")
     Page<Music> findByMultipleCriteria(@Param("genre") String genre,
                                      @Param("category") String category,
-                                     @Param("minPrice") Double minPrice,
-                                     @Param("maxPrice") Double maxPrice,
+                                     @Param("minPrice") BigDecimal minPrice,
+                                     @Param("maxPrice") BigDecimal maxPrice,
                                      Pageable pageable);
 
     // Count methods for analytics

@@ -6,12 +6,76 @@ http://localhost:8082
 ```
 
 ## Overview
-This API provides endpoints for a music store application with support for user authentication, music management, cart operations, and audio streaming. The API is designed to work seamlessly with React frontends for music playback and e-commerce functionality.
+This API provides endpoints for a comprehensive music store application with support for user authentication, music management, cart operations, order processing, reviews, and administrative functions. The API features an improved rating system with cached averages and optimized cart functionality for better performance.
+
+## Recent Updates (September 2025)
+- **Enhanced Rating System**: Music tracks now store average ratings and review counts for better performance
+- **Optimized Cart Operations**: Fixed LazyInitializationException and improved cart total calculations
+- **Improved Checkout Process**: Fixed null value constraints and enhanced order processing
+- **Better Error Handling**: Added specific HTTP status codes and detailed error messages
+
+## Authentication
+Most endpoints require JWT authentication via the `Authorization` header:
+```
+Authorization: Bearer <jwt_token>
+```
+
+## Role-Based Access Control
+- **PUBLIC**: Accessible without authentication
+- **CUSTOMER**: Requires CUSTOMER role
+- **ARTIST**: Requires ARTIST role  
+- **STAFF**: Requires STAFF role
+- **ADMIN**: Requires ADMIN role
+
+---
 
 ## Authentication Endpoints
 
-### 1. User Registration
+### 1. User Login
+**Endpoint:** `POST /api/auth/login`
+
+**Access Level:** PUBLIC
+
+**Description:** Authenticate user and receive JWT token
+
+**Request Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "username": "string (required, 3-50 characters)",
+  "password": "string (required, min 6 characters)"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "role": "CUSTOMER",
+    "firstName": "John",
+    "lastName": "Doe",
+    "artistName": null,
+    "cover": null
+  }
+}
+```
+
+**Error Responses:**
+- **400**: Invalid username or password
+- **500**: Internal server error
+
+### 2. User Registration
 **Endpoint:** `POST /api/auth/register`
+
+**Access Level:** PUBLIC
 
 **Description:** Register a new user (Customer or Artist)
 
@@ -39,109 +103,35 @@ Content-Type: application/json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com",
+    "id": 2,
+    "username": "new_user",
+    "email": "newuser@example.com",
     "role": "CUSTOMER",
-    "firstName": "John",
-    "lastName": "Doe",
-    "artistName": null,
-    "cover": null
+    "firstName": "New",
+    "lastName": "User"
   }
 }
 ```
 
-**Error Response (400):**
-```json
-{
-  "message": "Registration failed: Username already exists"
-}
-```
-
-### 2. User Login
-**Endpoint:** `POST /api/auth/login`
-
-**Description:** Authenticate user and receive JWT token for protected endpoints
-
-**Request Headers:**
-```
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "username": "string (required)",
-  "password": "string (required)"
-}
-```
-
-**Success Response (200):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com",
-    "role": "CUSTOMER",
-    "firstName": "John",
-    "lastName": "Doe"
-  }
-}
-```
-
-**Error Response (400):**
-```json
-{
-  "message": "Invalid username or password"
-}
-```
-
-### 3. Get Current User
-**Endpoint:** `GET /api/auth/me`
-
-**Description:** Get current authenticated user information
-
-**Request Headers:**
-```
-Authorization: Bearer {JWT_TOKEN}
-```
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "username": "john_doe",
-  "email": "john@example.com",
-  "role": "CUSTOMER",
-  "firstName": "John",
-  "lastName": "Doe"
-}
-```
+**Error Responses:**
+- **400**: Validation errors or user already exists
+- **500**: Internal server error
 
 ---
 
 ## Music Endpoints
 
-### 1. Get All Music (Paginated)
+### 1. Get All Music
 **Endpoint:** `GET /api/music`
 
-**Description:** Retrieve paginated list of all music tracks with filtering and sorting options
+**Access Level:** PUBLIC
+
+**Description:** Retrieve all music tracks with enhanced rating information
 
 **Query Parameters:**
-- `page` (optional, default: 0) - Page number (0-based)
-- `size` (optional, default: 50) - Number of items per page
-- `sortBy` (optional, default: "createdAt") - Field to sort by
-- `sortDir` (optional, default: "desc") - Sort direction ("asc" or "desc")
-- `genre` (optional) - Filter by genre
-- `artist` (optional) - Filter by artist username
-- `search` (optional) - Search in name, artist, or genre
-
-**Example Request:**
-```
-GET /api/music?page=0&size=10&sortBy=name&sortDir=asc&genre=Islamic
-```
+- `page` (optional): Page number for pagination (default: 0)
+- `size` (optional): Number of items per page (default: 10)
+- `sort` (optional): Sort field (default: created date)
 
 **Success Response (200):**
 ```json
@@ -149,370 +139,318 @@ GET /api/music?page=0&size=10&sortBy=name&sortDir=asc&genre=Islamic
   "content": [
     {
       "id": 1,
-      "name": "A Thousand Greetings",
-      "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
+      "name": "Song Title",
+      "description": "Song description",
       "price": 9.99,
-      "imageUrl": "https://example.com/images/thousand-greetings.jpg",
-      "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
-      "category": "Nasheed",
-      "artistUsername": "muhammad_al_muqit",
-      "albumName": "Spiritual Collection",
-      "genre": "Islamic",
-      "releaseYear": 2023,
+      "imageUrl": "/uploads/covers/song.jpg",
+      "audioFilePath": "/uploads/music/song.mp3",
+      "category": "Pop",
+      "artist": "artist_username",
+      "artistName": "Artist Display Name",
+      "albumName": "Album Name",
+      "genre": "Pop",
+      "releaseYear": 2024,
+      "averageRating": 4.25,
+      "totalReviews": 12,
       "createdAt": "2024-01-15T10:30:00"
     }
   ],
-  "pageable": {
-    "sort": {
-      "sorted": true,
-      "unsorted": false
-    },
-    "pageNumber": 0,
-    "pageSize": 10
-  },
-  "totalElements": 8,
-  "totalPages": 1,
-  "last": true,
-  "first": true,
-  "numberOfElements": 8
+  "totalElements": 50,
+  "totalPages": 5,
+  "size": 10,
+  "number": 0
 }
 ```
 
 ### 2. Get Music by ID
 **Endpoint:** `GET /api/music/{id}`
 
-**Description:** Retrieve a specific music track by its ID
+**Access Level:** PUBLIC
+
+**Description:** Get detailed information about a specific music track
 
 **Path Parameters:**
-- `id` (required) - Music track ID
+- `id`: Music ID
 
 **Success Response (200):**
 ```json
 {
   "id": 1,
-  "name": "A Thousand Greetings",
-  "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
+  "name": "Song Title",
+  "description": "Detailed song description",
   "price": 9.99,
-  "imageUrl": "https://example.com/images/thousand-greetings.jpg",
-  "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
-  "category": "Nasheed",
-  "artistUsername": "muhammad_al_muqit",
-  "albumName": "Spiritual Collection",
-  "genre": "Islamic",
-  "releaseYear": 2023,
+  "imageUrl": "/uploads/covers/song.jpg",
+  "audioFilePath": "/uploads/music/song.mp3",
+  "category": "Pop",
+  "artist": "artist_username",
+  "albumName": "Album Name",
+  "genre": "Pop",
+  "releaseYear": 2024,
+  "averageRating": 4.25,
+  "totalReviews": 12,
   "createdAt": "2024-01-15T10:30:00"
 }
 ```
 
-**Error Response (404):**
-```json
-{
-  "message": "Music not found with id: 1"
-}
-```
+**Error Responses:**
+- **404**: Music not found
 
-### 3. Get Featured Music
-**Endpoint:** `GET /api/music/featured`
+---
 
-**Description:** Get the first 8 music tracks to display as featured content
+## Cart Endpoints (Enhanced)
 
-**Success Response (200):**
-```json
-[
-  {
-    "id": 1,
-    "name": "A Thousand Greetings",
-    "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
-    "price": 9.99,
-    "imageUrl": "https://example.com/images/thousand-greetings.jpg",
-    "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
-    "category": "Nasheed",
-    "artistUsername": "muhammad_al_muqit",
-    "albumName": "Spiritual Collection",
-    "genre": "Islamic",
-    "releaseYear": 2023,
-    "createdAt": "2024-01-15T10:30:00"
-  }
-]
-```
+### 1. Get User Cart
+**Endpoint:** `GET /api/cart`
 
-### 4. Get Available Genres
-**Endpoint:** `GET /api/music/genres`
+**Access Level:** CUSTOMER
 
-**Description:** Get list of all available music genres
-
-**Success Response (200):**
-```json
-[
-  "Islamic",
-  "Pop",
-  "Rock",
-  "Jazz",
-  "Classical",
-  "Electronic",
-  "Hip-Hop",
-  "Country",
-  "Blues"
-]
-```
-
-### 5. Get Available Artists
-**Endpoint:** `GET /api/music/artists`
-
-**Description:** Get list of all available artists
-
-**Success Response (200):**
-```json
-[
-  "muhammad_al_muqit",
-  "traditional_artist",
-  "grateful_voice",
-  "reflective_soul",
-  "yearning_heart"
-]
-```
-
-### 6. Get Music by Artist
-**Endpoint:** `GET /api/music/by-artist/{artistUsername}`
-
-**Description:** Get paginated music tracks by a specific artist
-
-**Path Parameters:**
-- `artistUsername` (required) - Artist's username
-
-**Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 12) - Number of items per page
+**Description:** Retrieve user's current cart with all items
 
 **Success Response (200):**
 ```json
 {
-  "content": [
+  "id": 1,
+  "customerUsername": "john_doe",
+  "items": [
     {
       "id": 1,
-      "name": "A Thousand Greetings",
-      "description": "Motivational nasheed that uplifts the soul and connects with divine spirituality",
-      "price": 9.99,
-      "imageUrl": "https://example.com/images/thousand-greetings.jpg",
-      "audioFilePath": "/uploads/music/A THOUSAND GREETINGS - MOTIVATIONAL NASHEED - MUHAMMAD AL MUQIT .mp3",
-      "category": "Nasheed",
-      "artistUsername": "muhammad_al_muqit",
-      "albumName": "Spiritual Collection",
-      "genre": "Islamic",
-      "releaseYear": 2023,
-      "createdAt": "2024-01-15T10:30:00"
+      "music": {
+        "id": 5,
+        "name": "Song Title",
+        "artist": "artist_username",
+        "price": 9.99,
+        "imageUrl": "/uploads/covers/song.jpg"
+      },
+      "unitPrice": 9.99,
+      "totalPrice": 9.99
     }
   ],
-  "totalElements": 3,
-  "totalPages": 1
+  "total": 19.98
 }
 ```
 
-### 7. Get Artist Music Count
-**Endpoint:** `GET /api/music/artists/{artistUsername}/count`
+**Error Responses:**
+- **401**: Authentication required
 
-**Description:** Get the total number of music tracks by a specific artist
+### 2. Add to Cart
+**Endpoint:** `POST /api/cart/add/{musicId}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Add a music track to user's cart
 
 **Path Parameters:**
-- `artistUsername` (required) - Artist's username
+- `musicId`: ID of the music to add
 
 **Success Response (200):**
 ```json
 {
-  "count": 3,
-  "artist": "muhammad_al_muqit"
+  "id": 1,
+  "customerUsername": "john_doe",
+  "items": [
+    {
+      "id": 1,
+      "music": {
+        "id": 5,
+        "name": "Song Title",
+        "artist": "artist_username",
+        "price": 9.99,
+        "imageUrl": "/uploads/covers/song.jpg"
+      },
+      "unitPrice": 9.99,
+      "totalPrice": 9.99
+    }
+  ],
+  "total": 9.99
 }
 ```
 
-### 8. Upload Music
-**Endpoint:** `POST /api/music/upload`
+**Error Responses:**
+- **401**: Authentication required
+- **404**: Music not found
+- **409**: Music already in cart or already purchased
 
-**Description:** Upload a new music file with metadata (Form data)
+### 3. Remove from Cart
+**Endpoint:** `DELETE /api/cart/remove/{itemId}`
 
-**Request Headers:**
-```
-Content-Type: multipart/form-data
-Authorization: Bearer {JWT_TOKEN} (if authentication required)
-```
+**Access Level:** CUSTOMER
 
-**Form Data Parameters:**
-- `file` (required) - Audio file (MP3, WAV, etc.)
-- `name` (required) - Music track name
-- `description` (required) - Track description
-- `price` (required) - Price as decimal string
-- `genre` (required) - Music genre
-- `artist` (required) - Artist username
-- `albumName` (optional) - Album name
-- `releaseYear` (required) - Release year as string
+**Description:** Remove an item from user's cart
+
+**Path Parameters:**
+- `itemId`: Cart item ID to remove
 
 **Success Response (200):**
 ```json
 {
-  "id": 9,
-  "name": "New Track",
-  "description": "Amazing new track",
-  "price": 15.99,
-  "audioFilePath": "/uploads/music/uuid_filename.mp3",
-  "category": "Pop",
-  "artistUsername": "new_artist",
-  "albumName": "New Album",
-  "genre": "Pop",
-  "releaseYear": 2024,
-  "createdAt": "2024-01-20T14:30:00"
+  "id": 1,
+  "customerUsername": "john_doe",
+  "items": [],
+  "total": 0.00
 }
 ```
 
+**Error Responses:**
+- **401**: Authentication required
+- **404**: Cart item not found
+- **403**: Unauthorized to remove this item
+
+### 4. Clear Cart
+**Endpoint:** `POST /api/cart/clear`
+
+**Access Level:** CUSTOMER
+
+**Description:** Remove all items from user's cart
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "customerUsername": "john_doe",
+  "items": [],
+  "total": 0.00
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **500**: Failed to clear cart
+
+### 5. Checkout Cart
+**Endpoint:** `POST /api/cart/checkout`
+
+**Access Level:** CUSTOMER
+
+**Description:** Process cart checkout and create order (Enhanced with proper total calculation)
+
+**Success Response (200):**
+```json
+{
+  "message": "Checkout successful",
+  "orderId": 123
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **400**: Cart is empty or invalid cart state
+- **500**: Failed to process checkout
+
 ---
 
-## Audio Streaming
+## Review Endpoints (Enhanced Rating System)
 
-### 1. Stream Music File
-**Endpoint:** `GET /uploads/music/{filename}`
+### 1. Create Review
+**Endpoint:** `POST /api/reviews/music/{musicId}`
 
-**Description:** Stream audio file for playback in React applications
+**Access Level:** CUSTOMER
+
+**Description:** Create a review for a music track (automatically updates music rating statistics)
 
 **Path Parameters:**
-- `filename` (required) - Audio file name from audioFilePath
+- `musicId`: ID of the music to review
 
-**Response:** Audio stream (MP3/WAV format)
-
-**Usage in React:**
-```javascript
-const audioUrl = `http://localhost:8082/uploads/music/A%20THOUSAND%20GREETINGS%20-%20MOTIVATIONAL%20NASHEED%20-%20MUHAMMAD%20AL%20MUQIT%20.mp3`;
-const audio = new Audio(audioUrl);
-audio.play();
-```
-
----
-
-## Sample Music Data
-
-The application comes pre-loaded with 8 nasheed tracks:
-
-1. **A Thousand Greetings** - Muhammad Al Muqit ($9.99)
-2. **I Rise** - Muhammad Al Muqit ($8.99)
-3. **Qad Kafani Ilmu Rabbi** - Traditional Artist ($10.99)
-4. **Shukran Laka Rabbi** - Grateful Voice ($7.99)
-5. **Sins Nasheed** - Reflective Soul ($9.49)
-6. **Tabsirah (Slowed Reverb)** - Muhammad Al Muqit ($11.99)
-7. **Taweel Al Shawq** - Yearning Heart ($8.49)
-8. **The Book of Allah is My Constitution** - Muhammad Al Muqit ($12.99)
-
-All tracks are in the "Islamic" genre and "Nasheed" category with complete metadata including descriptions, album names, and release years.
-
----
-
-## Error Handling
-
-### Common Error Responses
-
-**400 Bad Request:**
+**Request Body:**
 ```json
 {
-  "message": "Invalid request parameters",
-  "details": "Specific validation error details"
+  "rating": 5,
+  "comment": "Great song! Love it."
 }
-```
-
-**401 Unauthorized:**
-```json
-{
-  "message": "Authentication required"
-}
-```
-
-**403 Forbidden:**
-```json
-{
-  "message": "Access denied"
-}
-```
-
-**404 Not Found:**
-```json
-{
-  "message": "Resource not found"
-}
-```
-
-**500 Internal Server Error:**
-```json
-{
-  "message": "Internal server error",
-  "details": "Error processing request"
-}
-```
-
----
-
-## CORS Configuration
-
-The API is configured to accept requests from:
-- `http://localhost:5173` (Default Vite React development server)
-
----
-
-## Checkout and Orders
-
-### 1. Checkout Cart
-**Endpoint:** `POST /api/customers/cart/checkout`
-
-**Description:** Place an order from the current user's cart items and send email receipt. This endpoint supports multiple music purchases in a single transaction - all items currently in the user's cart will be included in the order.
-
-**Request Headers:**
-```
-Authorization: Bearer {JWT_TOKEN}
-Content-Type: application/json
 ```
 
 **Success Response (200):**
 ```json
 {
   "id": 1,
-  "customer": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com"
-  },
-  "orderDate": "2024-01-20T15:30:00",
-  "totalAmount": 29.97,
-  "status": "PENDING",
-  "paymentMethod": null,
-  "orderItems": [
-    {
-      "id": 1,
-      "music": {
-        "id": 1,
-        "name": "A Thousand Greetings",
-        "price": 9.99,
-        "artistUsername": "muhammad_al_muqit"
-      },
-      "unitPrice": 9.99,
-      "musicTitle": "A Thousand Greetings",
-      "artistName": "muhammad_al_muqit"
-    }
-  ]
+  "musicId": 5,
+  "username": "john_doe",
+  "customerName": "John Doe",
+  "rating": 5,
+  "comment": "Great song! Love it.",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00",
+  "isOwnReview": true
 }
 ```
 
 **Error Responses:**
-- **400 Bad Request:** Cart is empty
-- **401 Unauthorized:** User not authenticated
-- **500 Internal Server Error:** Failed to process checkout
+- **401**: Authentication required
+- **400**: Invalid rating (must be 1-5) or user already reviewed
+- **404**: Music not found
 
-### 2. Get User Orders
-**Endpoint:** `GET /api/customers/orders`
+### 2. Update Review
+**Endpoint:** `PUT /api/reviews/{reviewId}`
 
-**Description:** Get paginated list of orders for the authenticated user
+**Access Level:** CUSTOMER
 
-**Request Headers:**
+**Description:** Update an existing review (automatically recalculates music rating statistics)
+
+**Path Parameters:**
+- `reviewId`: ID of the review to update
+
+**Request Body:**
+```json
+{
+  "rating": 4,
+  "comment": "Updated review comment"
+}
 ```
-Authorization: Bearer {JWT_TOKEN}
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "musicId": 5,
+  "username": "john_doe",
+  "customerName": "John Doe",
+  "rating": 4,
+  "comment": "Updated review comment",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T11:00:00",
+  "isOwnReview": true
+}
 ```
+
+**Error Responses:**
+- **401**: Authentication required
+- **400**: Invalid rating or unauthorized access
+- **404**: Review not found
+
+### 3. Delete Review
+**Endpoint:** `DELETE /api/reviews/{reviewId}`
+
+**Access Level:** CUSTOMER
+
+**Description:** Delete a review (automatically recalculates music rating statistics)
+
+**Path Parameters:**
+- `reviewId`: ID of the review to delete
+
+**Success Response (200):**
+```json
+{
+  "message": "Review deleted successfully"
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **403**: Can only delete own reviews
+- **404**: Review not found
+
+### 4. Get Reviews for Music
+**Endpoint:** `GET /api/reviews/music/{musicId}`
+
+**Access Level:** PUBLIC
+
+**Description:** Get paginated reviews for a specific music track
+
+**Path Parameters:**
+- `musicId`: ID of the music
 
 **Query Parameters:**
-- `page` (optional, default: 0) - Page number
-- `size` (optional, default: 10) - Number of orders per page
+- `page` (optional): Page number (default: 0)
+- `size` (optional): Page size (default: 10)
 
 **Success Response (200):**
 ```json
@@ -520,152 +458,204 @@ Authorization: Bearer {JWT_TOKEN}
   "content": [
     {
       "id": 1,
-      "orderDate": "2024-01-20T15:30:00",
+      "musicId": 5,
+      "username": "john_doe",
+      "customerName": "John Doe",
+      "rating": 5,
+      "comment": "Great song!",
+      "createdAt": "2024-01-15T10:30:00",
+      "updatedAt": "2024-01-15T10:30:00",
+      "isOwnReview": false
+    }
+  ],
+  "totalElements": 12,
+  "totalPages": 2,
+  "size": 10,
+  "number": 0
+}
+```
+
+### 5. Get User's Review for Music
+**Endpoint:** `GET /api/reviews/music/{musicId}/my-review`
+
+**Access Level:** CUSTOMER
+
+**Description:** Get the current user's review for a specific music track
+
+**Path Parameters:**
+- `musicId`: ID of the music
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "musicId": 5,
+  "username": "john_doe",
+  "customerName": "John Doe",
+  "rating": 5,
+  "comment": "Great song!",
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00",
+  "isOwnReview": true
+}
+```
+
+**Error Responses:**
+- **401**: Authentication required
+- **404**: Review not found
+
+### 6. Get Review Statistics
+**Endpoint:** `GET /api/reviews/music/{musicId}/stats`
+
+**Access Level:** PUBLIC
+
+**Description:** Get comprehensive review statistics for a music track (uses cached data for better performance)
+
+**Path Parameters:**
+- `musicId`: ID of the music
+
+**Success Response (200):**
+```json
+{
+  "totalReviews": 12,
+  "averageRating": 4.25,
+  "ratingDistribution": {
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 4,
+    "5": 5
+  }
+}
+```
+
+---
+
+## Order Endpoints (Enhanced)
+
+### 1. Get User Orders
+**Endpoint:** `GET /api/orders`
+
+**Access Level:** CUSTOMER
+
+**Description:** Get user's order history with pagination
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 0)
+- `size` (optional): Page size (default: 10)
+
+**Success Response (200):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "orderDate": "2024-01-15T10:30:00",
+      "status": "COMPLETED",
       "totalAmount": 29.97,
-      "status": "PENDING",
-      "orderItems": [
+      "items": [
         {
           "id": 1,
-          "musicTitle": "A Thousand Greetings",
-          "artistName": "muhammad_al_muqit",
-          "unitPrice": 9.99
+          "musicName": "Song Title",
+          "artistName": "Artist Name",
+          "price": 9.99,
+          "quantity": 1
         }
       ]
     }
   ],
-  "totalElements": 1,
+  "totalElements": 5,
   "totalPages": 1,
   "size": 10,
   "number": 0
 }
 ```
 
-### 3. Get Order Details
-**Endpoint:** `GET /api/customers/orders/{orderId}`
+### 2. Get Order Details
+**Endpoint:** `GET /api/orders/{orderId}`
+
+**Access Level:** CUSTOMER
 
 **Description:** Get detailed information about a specific order
 
-**Request Headers:**
-```
-Authorization: Bearer {JWT_TOKEN}
-```
-
 **Path Parameters:**
-- `orderId` (required) - Order ID
+- `orderId`: ID of the order
 
 **Success Response (200):**
 ```json
 {
   "id": 1,
-  "customer": {
-    "id": 1,
-    "username": "john_doe",
-    "email": "john@example.com"
-  },
-  "orderDate": "2024-01-20T15:30:00",
+  "orderDate": "2024-01-15T10:30:00",
+  "status": "COMPLETED",
   "totalAmount": 29.97,
-  "status": "PENDING",
-  "paymentMethod": null,
-  "orderItems": [
+  "paymentMethod": "CREDIT_CARD",
+  "items": [
     {
       "id": 1,
-      "music": {
-        "id": 1,
-        "name": "A Thousand Greetings",
-        "price": 9.99,
-        "artistUsername": "muhammad_al_muqit"
-      },
-      "unitPrice": 9.99,
-      "musicTitle": "A Thousand Greetings",
-      "artistName": "muhammad_al_muqit"
+      "musicName": "Song Title",
+      "artistName": "Artist Name",
+      "price": 9.99,
+      "quantity": 1,
+      "totalPrice": 9.99
     }
   ]
 }
 ```
 
 **Error Responses:**
-- **404 Not Found:** Order not found
-- **403 Forbidden:** Order doesn't belong to user
-
-### Email Receipt
-When an order is successfully placed through checkout, an email receipt is automatically sent to the customer's registered email address containing:
-- Order ID and date
-- List of purchased music tracks
-- Total amount paid
-- Thank you message
+- **401**: Authentication required
+- **403**: Can only view own orders
+- **404**: Order not found
 
 ---
 
-## React Frontend Integration
+## Technical Implementation Details
 
-### Basic Usage Example
+### Enhanced Rating System
+- **Cached Averages**: Music tracks store `averageRating` and `totalReviews` fields for instant access
+- **Automatic Updates**: Rating statistics are recalculated automatically when reviews are created, updated, or deleted
+- **Performance Optimized**: No need to calculate averages on-demand, resulting in faster API responses
+- **Data Integrity**: Rating updates are atomic and handle edge cases gracefully
 
-```javascript
-// Fetch all music tracks
-const fetchMusic = async () => {
-  try {
-    const response = await fetch('http://localhost:8082/api/music?page=0&size=20');
-    const data = await response.json();
-    return data.content; // Array of music tracks
-  } catch (error) {
-    console.error('Error fetching music:', error);
-  }
-};
+### Improved Cart Operations
+- **Lazy Loading Fixed**: Resolved Hibernate LazyInitializationException with proper eager fetching
+- **Better Error Handling**: Specific HTTP status codes and detailed error messages
+- **Total Calculation**: Fixed null value constraints in checkout process
+- **Transaction Safety**: All cart operations are properly transactional
 
-// Play a music track
-const playTrack = (audioFilePath) => {
-  const audio = new Audio(`http://localhost:8082${audioFilePath}`);
-  audio.play();
-};
+### Database Schema Updates
+```sql
+-- Music table enhancements
+ALTER TABLE music ADD COLUMN average_rating DECIMAL(3,2) DEFAULT 0.0;
+ALTER TABLE music ADD COLUMN total_reviews INTEGER DEFAULT 0;
 
-// Get featured music for homepage
-const fetchFeaturedMusic = async () => {
-  try {
-    const response = await fetch('http://localhost:8082/api/music/featured');
-    const featuredTracks = await response.json();
-    return featuredTracks;
-  } catch (error) {
-    console.error('Error fetching featured music:', error);
-  }
-};
+-- These fields are automatically maintained by the application
 ```
 
-### Audio Player Component Example
+### Error Handling Standards
+- **401**: Authentication required
+- **403**: Forbidden/Unauthorized access
+- **404**: Resource not found
+- **409**: Conflict (e.g., already in cart)
+- **400**: Bad request/validation errors
+- **500**: Internal server error
 
-```jsx
-import React, { useState, useRef } from 'react';
+---
 
-const AudioPlayer = ({ track }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef(null);
+## Security Features
+- JWT-based authentication
+- Role-based access control
+- CORS enabled for frontend integration
+- Request validation and sanitization
+- Secure password handling
 
-  const togglePlayPause = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
+## Performance Optimizations
+- Cached rating calculations
+- Optimized database queries with eager fetching
+- Efficient pagination
+- Transactional consistency
 
-  return (
-    <div className="audio-player">
-      <audio
-        ref={audioRef}
-        src={`http://localhost:8082${track.audioFilePath}`}
-        onEnded={() => setIsPlaying(false)}
-      />
-      <button onClick={togglePlayPause}>
-        {isPlaying ? 'Pause' : 'Play'}
-      </button>
-      <div className="track-info">
-        <h3>{track.name}</h3>
-        <p>{track.artistUsername}</p>
-        <p>${track.price}</p>
-      </div>
-    </div>
-  );
-};
-```
+---
 
-This API documentation provides everything you need to integrate music playback functionality into your React frontend application.
+*Last Updated: September 21, 2025*
+*API Version: 2.0 (Enhanced)*

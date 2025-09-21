@@ -7,6 +7,7 @@ import com.music.musicstore.models.order.OrderItem;
 import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.repositories.CartItemRepository;
 import com.music.musicstore.repositories.OrderRepository;
+import com.music.musicstore.repositories.CustomerRepository;
 import com.music.musicstore.services.CustomerService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +30,16 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
     private final EmailSender emailSender;
     private final CustomerService customerService;
+    private final CustomerRepository customerRepository;
 
     @Autowired
-    public OrderService(OrderRepository orderRepository, CartService cartService, CartItemRepository cartItemRepository, EmailSender emailSender, CustomerService customerService) {
+    public OrderService(OrderRepository orderRepository, CartService cartService, CartItemRepository cartItemRepository, EmailSender emailSender, CustomerService customerService, CustomerRepository customerRepository) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
         this.cartItemRepository = cartItemRepository;
         this.emailSender = emailSender;
         this.customerService = customerService;
+        this.customerRepository = customerRepository;
     }
 
     public void placeOrder(Customer customer){
@@ -50,9 +53,21 @@ public class OrderService {
         order.setCustomer(customer);
         order.setTotalAmount(cart.getTotalAmount());
 
-        emailSender.sendReceipt(order.getTotalAmount(), cart.getItemList(), customer.getEmail(), order.getId().toString());
-
         orderRepository.save(order);
+
+        // CRITICAL FIX: Add purchased music to customer's purchased music collection
+        // Get a fresh customer instance with purchasedMusic loaded to avoid lazy initialization issues
+        Customer managedCustomer = customerRepository.findByIdWithPurchasedMusic(customer.getId())
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customer.getId()));
+
+        for (CartItem item : cart.getItems()) {
+            managedCustomer.getPurchasedMusic().add(item.getMusic());
+        }
+
+        customerService.save(managedCustomer);
+
+        // Send receipt email after updating purchased music
+        emailSender.sendReceipt(order.getTotalAmount(), cart.getItemList(), customer.getEmail(), order.getId().toString());
 
         // Clear the cart after successful order
         cartService.clearCart(customer);
@@ -94,10 +109,14 @@ public class OrderService {
                 throw new IllegalStateException("Cannot place order with empty cart");
             }
 
+            // Calculate cart total before creating order
+            cart.calculateTotalAmount();
+
             Order order = new Order(cart);
             order.setOrderDate(LocalDateTime.now());
             order.setCustomer(customer);
-            order.setTotalAmount(cart.getTotalAmount());
+            // Use the calculated total instead of the potentially null totalAmount
+            order.setTotalAmount(cart.getTotal());
             order.setStatus(Order.OrderStatus.PENDING);
 
             // Convert cart items to order items
@@ -108,6 +127,17 @@ public class OrderService {
             }
 
             Order savedOrder = orderRepository.save(order);
+
+            // CRITICAL FIX: Add purchased music to customer's purchased music collection
+            // Get a fresh customer instance with purchasedMusic loaded to avoid lazy initialization issues
+            Customer managedCustomer = customerRepository.findByIdWithPurchasedMusic(customer.getId())
+                    .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customer.getId()));
+
+            for (CartItem item : cart.getItems()) {
+                managedCustomer.getPurchasedMusic().add(item.getMusic());
+            }
+
+            customerService.save(managedCustomer);
 
             // Send receipt email
             emailSender.sendReceipt(order.getTotalAmount(), cart.getItemList(), customer.getEmail(), order.getId().toString());

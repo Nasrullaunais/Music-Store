@@ -101,6 +101,7 @@ public class AlbumService {
             album.setGenre(albumDetails.getGenre());
             album.setPrice(albumDetails.getPrice());
             album.setCoverImageUrl(albumDetails.getCoverImageUrl());
+            album.setCover(albumDetails.getCover()); // Update cover field
             album.setReleaseDate(albumDetails.getReleaseDate());
             if (albumDetails.getArtistUsername() != null) {
                 album.setArtistUsername(albumDetails.getArtistUsername());

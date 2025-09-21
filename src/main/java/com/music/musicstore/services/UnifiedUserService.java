@@ -43,7 +43,7 @@ public class UnifiedUserService {
     }
 
     public UserDto createUser(String username, String password, String email, String role,
-                             String firstName, String lastName, String artistName, String cover) {
+                             String firstName, String lastName, String artistName, String photoUrl) {
         logger.debug("Creating user: {} with role: {}", username, role);
 
         if (username == null || username.trim().isEmpty()) {
@@ -85,7 +85,7 @@ public class UnifiedUserService {
                     artist.setFirstName(firstName);
                     artist.setLastName(lastName);
                     artist.setArtistName(artistName);
-                    artist.setCover(cover);
+                    artist.setPhotoUrl(photoUrl);
                     Artist savedArtist = artistService.createArtist(artist);
                     logger.info("Successfully created artist: {}", username);
                     return convertArtistToDto(savedArtist);
@@ -589,8 +589,8 @@ public class UnifiedUserService {
             if (updates.containsKey("artistName")) {
                 artist.setArtistName((String) updates.get("artistName"));
             }
-            if (updates.containsKey("cover")) {
-                artist.setCover((String) updates.get("cover"));
+            if (updates.containsKey("photoUrl")) {
+                artist.setPhotoUrl((String) updates.get("photoUrl"));
             }
             if (updates.containsKey("password") && updates.get("password") != null) {
                 artist.setPassword(passwordEncoder.encode((String) updates.get("password")));

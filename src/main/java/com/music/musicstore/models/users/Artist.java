@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 @Entity
 @Table(name = "artists")
@@ -31,13 +30,13 @@ public class Artist implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = true)
+    @Column
     private String firstName;
 
-    @Column(nullable = true)
+    @Column
     private String lastName;
 
-    @Column(nullable = true)
+    @Column
     private String artistName;
 
     // Music collection relationship removed - use MusicService.getMusicByArtist(username) instead
@@ -45,8 +44,8 @@ public class Artist implements UserDetails {
     @Column(nullable = false)
     private String role = "ROLE_ARTIST";
 
-    @Column
-    private String cover;
+    @Column(name = "photo_url")
+    private String photoUrl;
 
     @Column(nullable = false)
     private boolean enabled = true;
@@ -78,9 +77,8 @@ public class Artist implements UserDetails {
     public String getArtistName() { return artistName; }
     public void setArtistName(String artistName) { this.artistName = artistName; }
 
-
-    public String getCover() { return cover; }
-    public void setCover(String cover) { this.cover = cover; }
+    public String getPhotoUrl() { return photoUrl; }
+    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
@@ -120,7 +118,7 @@ public class Artist implements UserDetails {
                 ", userName='" + userName + '\'' +
                 ", email='" + email + '\'' +
                 ", artistName='" + artistName + '\'' +
-                ", cover='" + cover + '\'' +
+                ", photoUrl='" + photoUrl + '\'' +
                 '}';
     }
 }
