@@ -43,7 +43,7 @@ public class Ticket {
     @Column(nullable = true)
     private LocalDateTime closedAt;
 
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @OrderBy("timestamp ASC")
     @JsonIgnore  // Always ignore messages in ticket serialization
     private List<TicketMessage> messages = new ArrayList<>();

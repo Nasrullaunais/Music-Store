@@ -39,16 +39,16 @@ public class CustomerService {
             throw new ValidationException("Username cannot be null or empty");
         }
 
-        try {
-            Customer customer = customerRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Customer not found with username: " + username));
-
-            logger.info("Successfully loaded user: {}", username);
-            return customer;
-        } catch (Exception e) {
-            logger.error("Error loading user by username: {}", username, e);
-            throw e;
+        Optional<Customer> customerOpt = customerRepository.findByUsername(username);
+        if (customerOpt.isEmpty()) {
+            // Don't log this as error since CombinedUserDetailsService expects this to fail for non-customer users
+            logger.debug("Customer not found with username: {}", username);
+            throw new UsernameNotFoundException("Customer not found with username: " + username);
         }
+
+        Customer customer = customerOpt.get();
+        logger.info("Successfully loaded user: {}", username);
+        return customer;
     }
 
     public Customer findByUsername(String username) {

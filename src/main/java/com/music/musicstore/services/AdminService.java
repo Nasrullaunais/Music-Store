@@ -38,16 +38,16 @@ public class AdminService {
             throw new ValidationException("Username cannot be null or empty");
         }
 
-        try {
-            Admin admin = adminRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Admin not found with username: " + username));
-
-            logger.info("Successfully loaded admin: {}", username);
-            return admin;
-        } catch (Exception e) {
-            logger.error("Error loading admin by username: {}", username, e);
-            throw e;
+        Optional<Admin> adminOpt = adminRepository.findByUsername(username);
+        if (adminOpt.isEmpty()) {
+            // Don't log this as error since CombinedUserDetailsService expects this to fail for non-admin users
+            logger.debug("Admin not found with username: {}", username);
+            throw new UsernameNotFoundException("Admin not found with username: " + username);
         }
+
+        Admin admin = adminOpt.get();
+        logger.info("Successfully loaded admin: {}", username);
+        return admin;
     }
 
     public Admin createAdmin(Admin admin) {

@@ -1,5 +1,6 @@
 package com.music.musicstore.api;
 
+import com.music.musicstore.models.support.TicketMessage;
 import com.music.musicstore.services.TicketService;
 import com.music.musicstore.services.StaffService;
 import com.music.musicstore.models.users.Staff;
@@ -15,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/staff")
-@PreAuthorize("hasRole('STAFF')")
 @CrossOrigin(origins = "http://localhost:5173")
 public class StaffApiController {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StaffApiController.class);
 
     @Autowired
     private TicketService ticketService;
@@ -94,12 +95,14 @@ public class StaffApiController {
     public ResponseEntity<?> replyToTicket(
             @PathVariable Long ticketId,
             @RequestBody TicketReplyRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal Staff staff) {
         try {
+            logger.info("Staff {} is replying to ticket {}", staff.getUsername(), ticketId);
             // Get the existing staff entity from database using StaffService
-            Staff staff = staffService.findByUsername(userDetails.getUsername());
+            Staff staff1 = staffService.findByUsername(staff.getUsername());
 
-            var message = ticketService.addStaffReply(ticketId, request.getMessage(), staff);
+            TicketMessage message = ticketService.addStaffReply(ticketId, request.getMessage(), staff1);
+            logger.info("Staff {} replied to ticket {}", staff.getUsername(), ticketId);
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest()

@@ -38,16 +38,16 @@ public class ArtistService {
             throw new ValidationException("Username cannot be null or empty");
         }
 
-        try {
-            Artist artist = artistRepository.findByUserName(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Artist not found with username: " + username));
-
-            logger.info("Successfully loaded artist: {}", username);
-            return artist;
-        } catch (Exception e) {
-            logger.error("Error loading artist by username: {}", username, e);
-            throw e;
+        Optional<Artist> artistOpt = artistRepository.findByUserName(username);
+        if (artistOpt.isEmpty()) {
+            // Don't log this as error since CombinedUserDetailsService expects this to fail for non-artist users
+            logger.debug("Artist not found with username: {}", username);
+            throw new UsernameNotFoundException("Artist not found with username: " + username);
         }
+
+        Artist artist = artistOpt.get();
+        logger.info("Successfully loaded artist: {}", username);
+        return artist;
     }
 
     public void registerArtist(String name, String rawPassword) {

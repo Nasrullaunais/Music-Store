@@ -39,16 +39,16 @@ public class StaffService {
             throw new ValidationException("Username cannot be null or empty");
         }
 
-        try {
-            Staff staff = staffRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Staff not found with username: " + username));
-
-            logger.info("Successfully loaded staff: {}", username);
-            return staff;
-        } catch (Exception e) {
-            logger.error("Error loading staff by username: {}", username, e);
-            throw e;
+        Optional<Staff> staffOpt = staffRepository.findByUsername(username);
+        if (staffOpt.isEmpty()) {
+            // Don't log this as error since CombinedUserDetailsService expects this to fail for non-staff users
+            logger.debug("Staff not found with username: {}", username);
+            throw new UsernameNotFoundException("Staff not found with username: " + username);
         }
+
+        Staff staff = staffOpt.get();
+        logger.info("Successfully loaded staff: {}", username);
+        return staff;
     }
 
     public Staff save(Staff staff) {
