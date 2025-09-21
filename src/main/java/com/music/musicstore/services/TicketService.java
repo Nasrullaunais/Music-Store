@@ -118,23 +118,66 @@ public class TicketService {
 
     // Get all messages for a ticket
     public List<TicketMessage> getTicketMessages(Long ticketId) {
-        return ticketMessageRepository.findByTicket_IdOrderByTimestampAsc(ticketId);
+        List<TicketMessage> messages = ticketMessageRepository.findByTicket_IdOrderByTimestampAsc(ticketId);
+        messages.forEach(this::populateMessageTransientFields);
+        return messages;
+    }
+
+    // Get all tickets
+    public List<Ticket> getAllTickets() {
+        List<Ticket> tickets = ticketRepository.findAll();
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
+    }
+
+    // Get ticket by ID
+    public Optional<Ticket> getTicketById(Long id) {
+        Optional<Ticket> ticket = ticketRepository.findById(id);
+        ticket.ifPresent(this::populateTransientFields);
+        return ticket;
     }
 
     // Get tickets by username
     public List<Ticket> getTicketsByUsername(String username) {
         Customer customer = customerService.findByUsername(username);
-        return ticketRepository.findByCustomer(customer);
+        List<Ticket> tickets = ticketRepository.findByCustomer(customer);
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
     }
 
-    // Get all tickets
-    public List<Ticket> getAllTickets() {
-        return ticketRepository.findAll();
+    // Get tickets by status
+    public List<Ticket> getTicketsByStatus(String status) {
+        List<Ticket> tickets = ticketRepository.findByStatus(status);
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
     }
 
-    // Get ticket by ID
-    public Optional<Ticket> getTicketById(Long id) {
-        return ticketRepository.findById(id);
+    // Get unassigned tickets
+    public List<Ticket> getUnassignedTickets() {
+        List<Ticket> tickets = ticketRepository.findByAssignedStaffIsNull();
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
+    }
+
+    // Get urgent tickets
+    public List<Ticket> getUrgentTickets() {
+        List<Ticket> tickets = ticketRepository.findUrgentTickets();
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
+    }
+
+    // Get tickets needing attention
+    public List<Ticket> getTicketsNeedingAttention() {
+        List<Ticket> tickets = ticketRepository.findTicketsNeedingAttention();
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
+    }
+
+    // Search tickets
+    public List<Ticket> searchTickets(String searchTerm) {
+        List<Ticket> tickets = ticketRepository.findBySubjectOrMessageContentContaining(searchTerm);
+        tickets.forEach(this::populateTransientFields);
+        return tickets;
     }
 
     // Update ticket status
@@ -143,7 +186,9 @@ public class TicketService {
         if (ticketOpt.isPresent()) {
             Ticket ticket = ticketOpt.get();
             ticket.setStatus(status);
-            return ticketRepository.save(ticket);
+            Ticket savedTicket = ticketRepository.save(ticket);
+            populateTransientFields(savedTicket);
+            return savedTicket;
         }
         throw new RuntimeException("Ticket not found with ID: " + ticketId);
     }
@@ -157,7 +202,9 @@ public class TicketService {
             if ("OPEN".equals(ticket.getStatus())) {
                 ticket.setStatus("IN_PROGRESS");
             }
-            return ticketRepository.save(ticket);
+            Ticket savedTicket = ticketRepository.save(ticket);
+            populateTransientFields(savedTicket);
+            return savedTicket;
         }
         throw new RuntimeException("Ticket not found with ID: " + ticketId);
     }
@@ -172,49 +219,32 @@ public class TicketService {
         return updateTicketStatus(ticketId, "OPEN");
     }
 
-    // Get tickets by status
-    public List<Ticket> getTicketsByStatus(String status) {
-        return ticketRepository.findByStatus(status);
-    }
-
-    // Get unassigned tickets
-    public List<Ticket> getUnassignedTickets() {
-        return ticketRepository.findByAssignedStaffIsNull();
-    }
-
-    // Get tickets assigned to staff
-    public List<Ticket> getTicketsAssignedToStaff(Staff staff) {
-        return ticketRepository.findByAssignedStaff(staff);
-    }
-
-    // Get urgent tickets
-    public List<Ticket> getUrgentTickets() {
-        return ticketRepository.findUrgentTickets();
-    }
-
-    // Get tickets needing attention
-    public List<Ticket> getTicketsNeedingAttention() {
-        return ticketRepository.findTicketsNeedingAttention();
-    }
-
-    // Get recent tickets
-    public List<Ticket> getRecentTickets() {
-        return ticketRepository.findRecentTickets();
-    }
-
-    // Search tickets
-    public List<Ticket> searchTickets(String searchTerm) {
-        return ticketRepository.findBySubjectOrMessageContentContaining(searchTerm);
-    }
-
-    // Search tickets for specific customer
-    public List<Ticket> searchTicketsForCustomer(Customer customer, String searchTerm) {
-        return ticketRepository.findByCustomerAndSearchTerm(customer, searchTerm);
-    }
-
     // Get ticket statistics
     public List<Object[]> getStatusDistribution() {
         return ticketRepository.getStatusDistribution();
+    }
+
+    // Helper method to populate transient fields for safe JSON serialization
+    private void populateTransientFields(Ticket ticket) {
+        if (ticket.getCustomer() != null) {
+            ticket.setCustomerName(ticket.getCustomer().getUsername());
+        }
+        if (ticket.getAssignedStaff() != null) {
+            ticket.setAssignedStaffName(ticket.getAssignedStaff().getUsername());
+        }
+    }
+
+    // Helper method to populate transient fields for messages
+    private void populateMessageTransientFields(TicketMessage message) {
+        if (message.getTicket() != null) {
+            message.setTicketId(message.getTicket().getId());
+        }
+        if (message.getCustomer() != null) {
+            message.setCustomerName(message.getCustomer().getUsername());
+        }
+        if (message.getStaff() != null) {
+            message.setStaffName(message.getStaff().getUsername());
+        }
     }
 
     // Count tickets by status

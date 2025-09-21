@@ -18,14 +18,17 @@ public class Ticket {
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = true)
+    @JsonIgnore  // Prevent potential circular reference with Order
     private Order order;
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
+    @JsonIgnore  // Prevent circular reference with Customer
     private Customer customer;
 
     @ManyToOne
     @JoinColumn(name = "assigned_staff_id", nullable = true)
+    @JsonIgnore  // Prevent circular reference with Staff
     private Staff assignedStaff;
 
     @Column(nullable = false)
@@ -42,8 +45,15 @@ public class Ticket {
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("timestamp ASC")
-    @JsonIgnore  // Prevent lazy loading issues - use dedicated endpoint to get messages
+    @JsonIgnore  // Always ignore messages in ticket serialization
     private List<TicketMessage> messages = new ArrayList<>();
+
+    // Add these fields for safe JSON serialization
+    @Transient
+    private String customerName;
+
+    @Transient
+    private String assignedStaffName;
 
     // Constructors
     public Ticket() {}
@@ -52,13 +62,17 @@ public class Ticket {
         this.order = order;
         this.subject = subject;
         this.customer = customer;
-        // Don't add initial message here - do it after saving the ticket
+        if (customer != null) {
+            this.customerName = customer.getUsername();
+        }
     }
 
     public Ticket(String subject, Customer customer, String initialMessage) {
         this.subject = subject;
         this.customer = customer;
-        // Don't add initial message here - do it after saving the ticket
+        if (customer != null) {
+            this.customerName = customer.getUsername();
+        }
     }
 
     // Getters and Setters
@@ -143,15 +157,31 @@ public class Ticket {
         message.setTicket(this);
     }
 
-    @JsonIgnore  // Prevent circular reference during JSON serialization
-    public TicketMessage getLastMessage() {
-        if (messages.isEmpty()) {
-            return null;
+    // Remove the problematic getLastMessage() method completely
+    // Add safe methods for JSON serialization
+    public String getCustomerName() {
+        if (customerName == null && customer != null) {
+            customerName = customer.getUsername();
         }
-        return messages.get(messages.size() - 1);
+        return customerName;
     }
 
-    @JsonIgnore  // Prevent circular reference during JSON serialization
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getAssignedStaffName() {
+        if (assignedStaffName == null && assignedStaff != null) {
+            assignedStaffName = assignedStaff.getUsername();
+        }
+        return assignedStaffName;
+    }
+
+    public void setAssignedStaffName(String assignedStaffName) {
+        this.assignedStaffName = assignedStaffName;
+    }
+
+    @JsonIgnore
     public String getInitialMessage() {
         if (!messages.isEmpty()) {
             return messages.get(0).getContent();

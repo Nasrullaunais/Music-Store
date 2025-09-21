@@ -9,15 +9,24 @@ http://localhost:8082
 This API provides endpoints for a comprehensive music store application with support for user authentication, music management, cart operations, order processing, reviews, and administrative functions. The API features an enhanced ticket support system with chat-like messaging capabilities.
 
 ## Recent Updates (September 2025)
-- **Revolutionary Chat-Based Ticket System**: Complete overhaul of the support ticket system
-  - Tickets now support multiple messages in a conversation format
-  - Real-time chat between customers and staff members
-  - Staff assignment and escalation capabilities
-  - Comprehensive ticket status management
-- **Simplified Architecture**: Removed pagination complexity for university project requirements
-- **Enhanced Performance**: Optimized queries and removed unnecessary complexity
-- **Better User Experience**: Chat-like interface for support interactions
-- **Complete Admin Management**: Full administrative control over tickets, users, music, and orders
+- **FIXED: Critical Circular Reference Issues**: Resolved JSON serialization infinite loops
+  - Fixed Ticket/TicketMessage circular references causing "Document nesting depth exceeds maximum" errors
+  - Fixed Customer/Cart circular references
+  - Added proper @JsonIgnore annotations and transient fields for safe serialization
+- **FIXED: Database Schema Issues**: Resolved BigDecimal column definition problems
+- **FIXED: Hibernate Lazy Loading Issues**: Prevented session problems during JSON serialization
+- **Enhanced Chat-Based Ticket System**: Complete messaging system with proper DTOs
+  - Separate endpoints for ticket creation, message retrieval, and conversation management
+  - Proper DTO validation with TicketReplyRequest and TicketStatusUpdateRequest
+  - Comprehensive error handling with standardized ErrorResponse
+- **Improved Architecture**: Cleaner separation between ticket info and message conversations
+- **Better Performance**: Optimized queries with proper transient field population
+
+## API Flow for Ticket System
+1. **Create Ticket**: `POST /api/customer/support/ticket` - Returns clean ticket info without messages
+2. **Get Ticket Conversation**: `GET /api/customer/support/ticket/{ticketId}/messages` - Returns full chat conversation
+3. **Add Message**: `POST /api/customer/support/ticket/{ticketId}/message` - Adds new message to conversation
+4. **Staff Management**: Staff can reply, assign, and update ticket status via `/api/staff/tickets/` endpoints
 
 ## Authentication
 Most endpoints require JWT authentication via the `Authorization` header:
@@ -563,58 +572,394 @@ This separation provides better performance and cleaner API design.
 
 **Description:** Retrieve all support tickets with optional status filtering
 
-**Query Parameters:**
-- `status` (String, optional): Filter by ticket status
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
 
-### 2. Get Urgent Tickets (Staff)
+**Query Parameters:**
+- `status` (String, optional): Filter by ticket status (OPEN, IN_PROGRESS, URGENT, CLOSED)
+
+**Response (Success - 200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "subject": "Login Issue",
+    "description": "Cannot access my account",
+    "status": "OPEN",
+    "priority": "MEDIUM",
+    "customer": {
+      "id": 1,
+      "username": "john_doe",
+      "email": "john@example.com"
+    },
+    "staff": null,
+    "createdAt": "2025-09-22T10:30:00",
+    "lastUpdated": "2025-09-22T10:30:00"
+  }
+]
+```
+
+### 2. Get Specific Ticket Details (Staff)
+**Endpoint:** `GET /api/staff/tickets/{ticketId}`
+
+**Access Level:** STAFF
+
+**Description:** Get detailed information about a specific ticket
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "subject": "Login Issue",
+  "description": "Cannot access my account",
+  "status": "OPEN",
+  "priority": "MEDIUM",
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "staff": null,
+  "createdAt": "2025-09-22T10:30:00",
+  "lastUpdated": "2025-09-22T10:30:00"
+}
+```
+
+### 3. Get Ticket Messages/Conversation (Staff)
+**Endpoint:** `GET /api/staff/tickets/{ticketId}/messages`
+
+**Access Level:** STAFF
+
+**Description:** Get all messages in a ticket conversation
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket
+
+**Response (Success - 200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "content": "I cannot log into my account",
+    "timestamp": "2025-09-22T10:30:00",
+    "isFromStaff": false,
+    "customer": {
+      "id": 1,
+      "username": "john_doe",
+      "email": "john@example.com"
+    },
+    "staff": null
+  },
+  {
+    "id": 2,
+    "content": "Let me help you with that. Can you try resetting your password?",
+    "timestamp": "2025-09-22T11:00:00",
+    "isFromStaff": true,
+    "customer": null,
+    "staff": {
+      "id": 1,
+      "username": "staff1",
+      "email": "staff1@example.com"
+    }
+  }
+]
+```
+
+### 4. Get Urgent Tickets (Staff)
 **Endpoint:** `GET /api/staff/tickets/urgent`
 
 **Access Level:** STAFF
 
-### 3. Get Tickets Needing Attention
+**Description:** Get all tickets marked as urgent priority
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Response:** Same format as Get All Tickets, filtered for urgent tickets
+
+### 5. Get Tickets Needing Attention (Staff)
 **Endpoint:** `GET /api/staff/tickets/needs-attention`
 
 **Access Level:** STAFF
 
-### 4. Get Unassigned Tickets (Staff)
+**Description:** Get tickets that require immediate staff attention
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Response:** Same format as Get All Tickets
+
+### 6. Get Unassigned Tickets (Staff)
 **Endpoint:** `GET /api/staff/tickets/unassigned`
 
 **Access Level:** STAFF
 
-### 5. Reply to Ticket (Staff)
+**Description:** Get all tickets that haven't been assigned to any staff member
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Response:** Same format as Get All Tickets, filtered for unassigned tickets
+
+### 7. Reply to Ticket (Staff)
 **Endpoint:** `POST /api/staff/tickets/{ticketId}/reply`
 
 **Access Level:** STAFF
 
+**Description:** Add a staff reply to a ticket conversation
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket to reply to
+
 **Request Body:**
 ```json
 {
-  "message": "string (required, staff reply content)"
+  "message": "string (required, staff reply content, max 2000 characters)"
 }
 ```
 
-### 6. Assign Ticket (Staff)
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 3,
+  "content": "Your reply message here",
+  "timestamp": "2025-09-22T11:30:00",
+  "isFromStaff": true,
+  "customer": null,
+  "staff": {
+    "id": 1,
+    "username": "staff1",
+    "email": "staff1@example.com"
+  }
+}
+```
+
+### 8. Assign Ticket to Current Staff (Staff)
 **Endpoint:** `POST /api/staff/tickets/{ticketId}/assign`
 
 **Access Level:** STAFF
 
-### 7. Update Ticket Status (Staff)
+**Description:** Assign a ticket to the currently authenticated staff member
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket to assign
+
+**Request Body:** None required (staff is determined from JWT token)
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "subject": "Login Issue",
+  "description": "Cannot access my account",
+  "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "staff": {
+    "id": 1,
+    "username": "staff1",
+    "email": "staff1@example.com"
+  },
+  "createdAt": "2025-09-22T10:30:00",
+  "lastUpdated": "2025-09-22T11:45:00"
+}
+```
+
+### 9. Update Ticket Status (Staff)
 **Endpoint:** `PUT /api/staff/tickets/{ticketId}/status`
 
 **Access Level:** STAFF
 
-### 8. Close Ticket (Staff)
+**Description:** Update the status of a ticket
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket to update
+
+**Request Body:**
+```json
+{
+  "status": "string (required, valid values: OPEN, IN_PROGRESS, URGENT, CLOSED)"
+}
+```
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "subject": "Login Issue",
+  "description": "Cannot access my account",
+  "status": "IN_PROGRESS",
+  "priority": "MEDIUM",
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "staff": {
+    "id": 1,
+    "username": "staff1",
+    "email": "staff1@example.com"
+  },
+  "createdAt": "2025-09-22T10:30:00",
+  "lastUpdated": "2025-09-22T12:00:00"
+}
+```
+
+### 10. Close Ticket (Staff)
 **Endpoint:** `POST /api/staff/tickets/{ticketId}/close`
 
 **Access Level:** STAFF
 
-### 9. Search Tickets (Staff)
-**Endpoint:** `GET /api/staff/tickets/search`
+**Description:** Close a ticket (sets status to CLOSED)
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket to close
+
+**Request Body:** None required
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "subject": "Login Issue",
+  "description": "Cannot access my account",
+  "status": "CLOSED",
+  "priority": "MEDIUM",
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "staff": {
+    "id": 1,
+    "username": "staff1",
+    "email": "staff1@example.com"
+  },
+  "createdAt": "2025-09-22T10:30:00",
+  "lastUpdated": "2025-09-22T12:15:00"
+}
+```
+
+### 11. Reopen Ticket (Staff)
+**Endpoint:** `POST /api/staff/tickets/{ticketId}/reopen`
 
 **Access Level:** STAFF
 
-**Query Parameters:**
-- `query` (String, required): Search term
+**Description:** Reopen a closed ticket (sets status back to OPEN)
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters:**
+- `ticketId` (Long, required): ID of the ticket to reopen
+
+**Request Body:** None required
+
+**Response (Success - 200 OK):**
+```json
+{
+  "id": 1,
+  "subject": "Login Issue",
+  "description": "Cannot access my account",
+  "status": "OPEN",
+  "priority": "MEDIUM",
+  "customer": {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com"
+  },
+  "staff": {
+    "id": 1,
+    "username": "staff1",
+    "email": "staff1@example.com"
+  },
+  "createdAt": "2025-09-22T10:30:00",
+  "lastUpdated": "2025-09-22T13:00:00"
+}
+```
+
+### 12. Get Ticket Statistics (Staff)
+**Endpoint:** `GET /api/staff/tickets/stats`
+
+**Access Level:** STAFF
+
+**Description:** Get statistical information about tickets (status distribution)
+
+**Request Headers:**
+```
+Authorization: Bearer <jwt_token>
+```
+
+**Response (Success - 200 OK):**
+```json
+{
+  "OPEN": 5,
+  "IN_PROGRESS": 3,
+  "URGENT": 2,
+  "CLOSED": 15
+}
+```
+
+---
+
+## Important Note: Staff Analytics and Reports
+
+**Staff users do NOT have access to analytics or sales reports endpoints.** These features are only available to ADMIN users:
+
+- Analytics: Available at `/api/admin/analytics/overview` and `/api/admin/analytics/detailed`
+- Reports: Available at `/api/admin/reports/comprehensive`
+
+Staff users should use the ticket statistics endpoint instead:
+- **GET `/api/staff/tickets/stats`** - Get ticket status distribution for staff dashboard
 
 ---
 

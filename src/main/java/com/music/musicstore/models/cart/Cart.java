@@ -1,6 +1,6 @@
 package com.music.musicstore.models.cart;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.music.musicstore.models.users.Customer;
 import jakarta.persistence.*;
 
@@ -17,19 +17,27 @@ public class Cart {
 
     @OneToOne
     @JoinColumn(name = "customer_id")
-    @JsonBackReference  // This prevents the circular reference back to Customer
+    @JsonIgnore  // Always ignore customer reference to prevent circular reference
     private Customer customer;
 
     @Column
     private BigDecimal totalAmount;
 
     @OneToMany(mappedBy = "cart")
+    @JsonIgnore  // Ignore cart items in basic cart serialization
     private List<CartItem> items = new ArrayList<>();
+
+    // Add transient field for safe serialization
+    @Transient
+    private String customerName;
 
     public Cart() {}
 
     public Cart(Customer customer) {
         this.customer = customer;
+        if (customer != null) {
+            this.customerName = customer.getUsername();
+        }
     }
 
     public void setItems(List<CartItem> items) {
@@ -87,5 +95,16 @@ public class Cart {
 
     public void calculateTotalAmount() {
         this.totalAmount = getTotal();
+    }
+
+    public String getCustomerName() {
+        if (customerName == null && customer != null) {
+            customerName = customer.getUsername();
+        }
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 }

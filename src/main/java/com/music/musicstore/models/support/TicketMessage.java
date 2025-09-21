@@ -1,6 +1,6 @@
 package com.music.musicstore.models.support;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.models.users.Staff;
 import jakarta.persistence.*;
@@ -15,7 +15,7 @@ public class TicketMessage {
 
     @ManyToOne
     @JoinColumn(name = "ticket_id", nullable = false)
-    @JsonBackReference  // This prevents the circular reference back to Ticket
+    @JsonIgnore  // Always ignore ticket reference to prevent circular reference
     private Ticket ticket;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -29,11 +29,23 @@ public class TicketMessage {
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = true)
+    @JsonIgnore  // Ignore to prevent circular reference
     private Customer customer;
 
     @ManyToOne
     @JoinColumn(name = "staff_id", nullable = true)
+    @JsonIgnore  // Ignore to prevent circular reference
     private Staff staff;
+
+    // Add these transient fields for safe JSON serialization
+    @Transient
+    private Long ticketId;
+
+    @Transient
+    private String customerName;
+
+    @Transient
+    private String staffName;
 
     // Constructors
     public TicketMessage() {}
@@ -43,6 +55,12 @@ public class TicketMessage {
         this.content = content;
         this.customer = customer;
         this.isFromStaff = false;
+        if (ticket != null) {
+            this.ticketId = ticket.getId();
+        }
+        if (customer != null) {
+            this.customerName = customer.getUsername();
+        }
     }
 
     public TicketMessage(Ticket ticket, String content, Staff staff) {
@@ -50,6 +68,12 @@ public class TicketMessage {
         this.content = content;
         this.staff = staff;
         this.isFromStaff = true;
+        if (ticket != null) {
+            this.ticketId = ticket.getId();
+        }
+        if (staff != null) {
+            this.staffName = staff.getUsername();
+        }
     }
 
     // Getters and Setters
@@ -109,12 +133,36 @@ public class TicketMessage {
         this.staff = staff;
     }
 
-    public String getSenderName() {
-        if (isFromStaff && staff != null) {
-            return staff.getUsername();
-        } else if (!isFromStaff && customer != null) {
-            return customer.getUsername();
+    public Long getTicketId() {
+        if (ticketId == null && ticket != null) {
+            ticketId = ticket.getId();
         }
-        return "Unknown";
+        return ticketId;
+    }
+
+    public void setTicketId(Long ticketId) {
+        this.ticketId = ticketId;
+    }
+
+    public String getCustomerName() {
+        if (customerName == null && customer != null) {
+            customerName = customer.getUsername();
+        }
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getStaffName() {
+        if (staffName == null && staff != null) {
+            staffName = staff.getUsername();
+        }
+        return staffName;
+    }
+
+    public void setStaffName(String staffName) {
+        this.staffName = staffName;
     }
 }

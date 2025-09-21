@@ -1,6 +1,8 @@
 package com.music.musicstore.api;
 
 import com.music.musicstore.dto.CreateReviewRequest;
+import com.music.musicstore.dto.ErrorResponse;
+import com.music.musicstore.dto.TicketReplyRequest;
 import com.music.musicstore.models.music.Music;
 import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.models.support.Ticket;
@@ -212,14 +214,9 @@ public class CustomerApiController {
         return ResponseEntity.ok(customer);
     }
 
-    // Define SuccessResponse and ErrorResponse classes for consistent JSON responses
+    // Define SuccessResponse for consistent JSON responses
     private static class SuccessResponse {
         public String message;
         public SuccessResponse(String message) { this.message = message; }
-    }
-
-    private static class ErrorResponse {
-        public String error;
-        public ErrorResponse(String error) { this.error = error; }
     }
 }

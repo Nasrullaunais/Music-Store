@@ -62,7 +62,7 @@ public class Music {
     private Integer releaseYear;
 
     // Rating fields - better performance than calculating on-demand
-    @Column(name = "average_rating")
+    @Column(name = "average_rating", precision = 3, scale = 2)
     private BigDecimal averageRating = BigDecimal.ZERO;
 
     @Column(name = "total_reviews")

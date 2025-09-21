@@ -1,7 +1,11 @@
 package com.music.musicstore.api;
 
 import com.music.musicstore.services.TicketService;
+import com.music.musicstore.services.StaffService;
 import com.music.musicstore.models.users.Staff;
+import com.music.musicstore.dto.ErrorResponse;
+import com.music.musicstore.dto.TicketReplyRequest;
+import com.music.musicstore.dto.TicketStatusUpdateRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,6 +21,9 @@ public class StaffApiController {
 
     @Autowired
     private TicketService ticketService;
+
+    @Autowired
+    private StaffService staffService;
 
     // Enhanced ticket management for staff
     @GetMapping("/tickets")
@@ -89,10 +96,8 @@ public class StaffApiController {
             @RequestBody TicketReplyRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            // For now, create a simple staff lookup - this should be implemented properly
-            // based on your security configuration
-            Staff staff = new Staff(); // This is a placeholder - implement proper staff lookup
-            staff.setUsername(userDetails.getUsername());
+            // Get the existing staff entity from database using StaffService
+            Staff staff = staffService.findByUsername(userDetails.getUsername());
 
             var message = ticketService.addStaffReply(ticketId, request.getMessage(), staff);
             return ResponseEntity.ok(message);
@@ -107,9 +112,8 @@ public class StaffApiController {
             @PathVariable Long ticketId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            // For now, create a simple staff lookup - this should be implemented properly
-            Staff staff = new Staff(); // This is a placeholder - implement proper staff lookup
-            staff.setUsername(userDetails.getUsername());
+            // Get the existing staff entity from database using StaffService
+            Staff staff = staffService.findByUsername(userDetails.getUsername());
 
             var ticket = ticketService.assignTicket(ticketId, staff);
             return ResponseEntity.ok(ticket);
@@ -173,31 +177,5 @@ public class StaffApiController {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to search tickets: " + e.getMessage()));
         }
-    }
-
-    // DTOs for requests and responses
-    public static class TicketReplyRequest {
-        private String message;
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-    }
-
-    public static class TicketStatusUpdateRequest {
-        private String status;
-
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-    }
-
-    public static class ErrorResponse {
-        private String message;
-
-        public ErrorResponse(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
     }
 }

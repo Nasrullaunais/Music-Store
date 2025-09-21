@@ -6,6 +6,7 @@ import com.music.musicstore.services.UnifiedUserService;
 import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.OrderService;
 import com.music.musicstore.services.TicketService;
+import com.music.musicstore.services.StaffService;
 import com.music.musicstore.models.users.Staff;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,9 @@ public class AdminApiController {
 
     @Autowired
     private TicketService ticketService;
+
+    @Autowired
+    private StaffService staffService;
 
     // User Management
     @PostMapping("/users/create")
@@ -283,11 +287,10 @@ public class AdminApiController {
             @RequestBody AdminTicketReplyRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            // Create a staff object for admin reply - this should be improved with proper staff lookup
-            Staff adminStaff = new Staff();
-            adminStaff.setUsername(userDetails.getUsername());
+            // Get the existing staff entity from database using StaffService
+            Staff staff = staffService.findByUsername(userDetails.getUsername());
 
-            var message = ticketService.addStaffReply(ticketId, request.getMessage(), adminStaff);
+            var message = ticketService.addStaffReply(ticketId, request.getMessage(), staff);
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -313,10 +316,10 @@ public class AdminApiController {
             @PathVariable Long ticketId,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Staff adminStaff = new Staff();
-            adminStaff.setUsername(userDetails.getUsername());
+            // Get the existing staff entity from database using StaffService
+            Staff staff = staffService.findByUsername(userDetails.getUsername());
 
-            var ticket = ticketService.assignTicket(ticketId, adminStaff);
+            var ticket = ticketService.assignTicket(ticketId, staff);
             return ResponseEntity.ok(ticket);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
