@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -43,6 +44,9 @@ public class Staff implements UserDetails {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    @Column(name = "created_at", nullable = true)
+    private LocalDateTime createdAt;
 
     // Default constructor required by JPA
     public Staff() {}
@@ -81,6 +85,14 @@ public class Staff implements UserDetails {
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     // UserDetails implementation
     @Override

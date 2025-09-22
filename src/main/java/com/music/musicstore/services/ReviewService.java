@@ -497,4 +497,114 @@ public class ReviewService {
             // Don't throw - this shouldn't fail the main review operation
         }
     }
+
+    // NEW: Admin review management methods
+    public Page<Review> getAllReviewsForAdmin(int page, int size, String sortBy) {
+        logger.debug("Getting all reviews for admin with page: {}, size: {}, sortBy: {}", page, size, sortBy);
+
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        if (sortBy != null) {
+            switch (sortBy.toLowerCase()) {
+                case "rating":
+                    pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                        org.springframework.data.domain.Sort.by("rating").descending());
+                    break;
+                case "date":
+                    pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                        org.springframework.data.domain.Sort.by("createdAt").descending());
+                    break;
+                default:
+                    pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                        org.springframework.data.domain.Sort.by("createdAt").descending());
+            }
+        }
+
+        return reviewRepository.findAll(pageable);
+    }
+
+    public void deleteReviewAsAdmin(Long reviewId) {
+        logger.debug("Admin deleting review with ID: {}", reviewId);
+
+        Optional<Review> reviewOptional = reviewRepository.findById(reviewId);
+        if (reviewOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Review", reviewId.toString());
+        }
+
+        Review review = reviewOptional.get();
+        Music music = review.getMusic();
+
+        // Update music statistics
+        updateMusicRatingAfterReviewDeletion(music, review.getRating());
+
+        reviewRepository.deleteById(reviewId);
+        logger.info("Admin successfully deleted review with ID: {}", reviewId);
+    }
+
+    public Page<Review> getFlaggedReviews(int page, int size) {
+        logger.debug("Getting flagged reviews with page: {} and size: {}", page, size);
+
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        // For now, return empty page as flagged reviews would need additional implementation
+        return Page.empty();
+    }
+
+    // NEW: Analytics methods
+    public long getTotalReviewsCount() {
+        return reviewRepository.count();
+    }
+
+    public Map<String, Object> getReviewAnalytics(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        Map<String, Object> analytics = new HashMap<>();
+
+        analytics.put("totalReviews", reviewRepository.count());
+        analytics.put("averageRating", getAverageRating());
+        analytics.put("ratingDistribution", getRatingDistribution());
+        analytics.put("reviewsThisWeek", getReviewsCountInPeriod(java.time.LocalDate.now().minusWeeks(1), java.time.LocalDate.now()));
+        analytics.put("reviewsThisMonth", getReviewsCountInPeriod(java.time.LocalDate.now().minusMonths(1), java.time.LocalDate.now()));
+
+        if (startDate != null && endDate != null) {
+            analytics.put("reviewsInPeriod", getReviewsCountInPeriod(startDate, endDate));
+        }
+
+        return analytics;
+    }
+
+    public Map<String, Long> getRatingDistribution() {
+        Map<String, Long> distribution = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            distribution.put(i + " stars", reviewRepository.countByRating(i));
+        }
+        return distribution;
+    }
+
+    private double getAverageRating() {
+        Double avgRating = reviewRepository.getAverageRating();
+        return avgRating != null ? avgRating : 0.0;
+    }
+
+    private long getReviewsCountInPeriod(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        java.time.LocalDateTime startDateTime = startDate.atStartOfDay();
+        java.time.LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+        return reviewRepository.countByCreatedAtBetween(startDateTime, endDateTime);
+    }
+
+    private void updateMusicRatingAfterReviewDeletion(Music music, Integer deletedRating) {
+        // Recalculate music rating after review deletion
+        List<Review> remainingReviews = reviewRepository.findByMusic(music);
+
+        if (remainingReviews.isEmpty()) {
+            music.setAverageRating(BigDecimal.ZERO);
+            music.setTotalReviews(0);
+        } else {
+            double newAverage = remainingReviews.stream()
+                .mapToInt(Review::getRating)
+                .average()
+                .orElse(0.0);
+
+            music.setAverageRating(BigDecimal.valueOf(newAverage));
+            music.setTotalReviews(remainingReviews.size());
+        }
+
+        musicRepository.save(music);
+    }
 }

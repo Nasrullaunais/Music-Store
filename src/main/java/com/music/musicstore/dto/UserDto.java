@@ -1,5 +1,7 @@
 package com.music.musicstore.dto;
 
+import java.time.LocalDateTime;
+
 public class UserDto {
     private Long id;
     private String username;
@@ -9,6 +11,8 @@ public class UserDto {
     private String lastName;
     private String artistName; // For artists
     private String cover; // For artists
+    private boolean enabled; // User account status
+    private LocalDateTime createdAt; // Account creation timestamp
 
     public UserDto() {}
 
@@ -26,6 +30,18 @@ public class UserDto {
         this.role = role;
         this.firstName = firstName;
         this.lastName = lastName;
+    }
+
+    // Constructor with enabled and createdAt fields
+    public UserDto(Long id, String username, String email, String role, String firstName, String lastName, boolean enabled, LocalDateTime createdAt) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.enabled = enabled;
+        this.createdAt = createdAt;
     }
 
     // Constructor for artists
@@ -62,4 +78,10 @@ public class UserDto {
 
     public String getCover() { return cover; }
     public void setCover(String cover) { this.cover = cover; }
+
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -2,13 +2,17 @@ package com.music.musicstore.api;
 
 import com.music.musicstore.dto.MusicDto;
 import com.music.musicstore.models.music.Music;
+import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.services.MusicService;
+import com.music.musicstore.services.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +37,9 @@ import java.util.stream.Collectors;
 public class MusicApiController {
 
     private final MusicService musicService;
+
+    @Autowired
+    private CustomerService customerService;
 
     @Autowired
     public MusicApiController(MusicService musicService) {
@@ -171,6 +180,55 @@ public class MusicApiController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    // NEW: Customer flagging endpoint
+    @PostMapping("/{musicId}/flag")
+    public ResponseEntity<?> flagMusic(
+            @PathVariable Long musicId,
+            @RequestBody FlagMusicRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Customer customer = customerService.findByUsername(userDetails.getUsername());
+            musicService.flagMusic(musicId, customer.getId(), request.getReason());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Music flagged successfully");
+            response.put("timestamp", LocalDateTime.now());
+            response.put("musicId", musicId);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Failed to flag music: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{musicId}/flag-status")
+    public ResponseEntity<?> getMusicFlagStatus(
+            @PathVariable Long musicId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Customer customer = customerService.findByUsername(userDetails.getUsername());
+            boolean isFlagged = musicService.isMusicFlaggedByCustomer(musicId, customer.getId());
+
+            return ResponseEntity.ok(Map.of(
+                "musicId", musicId,
+                "isFlagged", isFlagged,
+                "customerId", customer.getId()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Failed to get flag status: " + e.getMessage()));
+        }
+    }
+
+    // DTO for flag music request
+    public static class FlagMusicRequest {
+        private String reason;
+
+        public String getReason() { return reason; }
+        public void setReason(String reason) { this.reason = reason; }
     }
 
     private MusicDto convertToDto(Music music) {

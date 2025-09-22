@@ -68,6 +68,16 @@ public class Music {
     @Column(name = "total_reviews")
     private Integer totalReviews = 0;
 
+    // Flagging system for content moderation
+    @Column(name = "is_flagged")
+    private Boolean isFlagged = false;
+
+    @Column(name = "flagged_at")
+    private LocalDateTime flaggedAt;
+
+    @Column(name = "flagged_by_customer_id")
+    private Long flaggedByCustomerId;
+
 
     // Default constructor required by JPA
     public Music() {
@@ -214,6 +224,30 @@ public class Music {
 
     public void setTotalReviews(Integer totalReviews) {
         this.totalReviews = totalReviews;
+    }
+
+    public Boolean getFlagged() {
+        return isFlagged;
+    }
+
+    public void setFlagged(Boolean flagged) {
+        isFlagged = flagged;
+    }
+
+    public LocalDateTime getFlaggedAt() {
+        return flaggedAt;
+    }
+
+    public void setFlaggedAt(LocalDateTime flaggedAt) {
+        this.flaggedAt = flaggedAt;
+    }
+
+    public Long getFlaggedByCustomerId() {
+        return flaggedByCustomerId;
+    }
+
+    public void setFlaggedByCustomerId(Long flaggedByCustomerId) {
+        this.flaggedByCustomerId = flaggedByCustomerId;
     }
 
     @PrePersist

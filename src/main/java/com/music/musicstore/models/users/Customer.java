@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,18 +37,16 @@ public class Customer implements UserDetails {
     @JsonIgnore
     private String password;
 
-    @NotBlank(message = "First name is required")
-    @Column(nullable = false)
-    private String firstName;
-
-    @NotBlank(message = "Last name is required")
-    @Column(nullable = false)
-    private String lastName;
-
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = true)
+    private String firstName;
+
+    @Column(nullable = true)
+    private String lastName;
 
     @Column(nullable = false)
     @JsonIgnore
@@ -55,6 +54,9 @@ public class Customer implements UserDetails {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    @Column(name = "created_at", nullable = true)
+    private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonIgnore  // This breaks the circular reference
@@ -150,6 +152,14 @@ public class Customer implements UserDetails {
 
     public Cart getCart() {
         return cart;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     // UserDetails implementation

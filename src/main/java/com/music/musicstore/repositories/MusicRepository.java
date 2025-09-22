@@ -6,10 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -35,8 +35,6 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
     Page<Music> findByNameContainingIgnoreCaseOrArtistUsernameContainingIgnoreCaseOrGenreContainingIgnoreCase(
             String name, String artistUsername, String genre, Pageable pageable);
 
-    // Missing methods needed by MusicService
-
     // Search by title or artist (for CustomerApiController search)
     Page<Music> findByNameContainingIgnoreCaseOrArtistUsernameContainingIgnoreCase(
             String name, String artistUsername, Pageable pageable);
@@ -51,32 +49,35 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
     // Find by genre with pagination
     Page<Music> findByGenre(String genre, Pageable pageable);
 
-    // Analytics methods for MusicService
+    // Count methods for analytics
+    long countByArtistUsername(String artistUsername);
+
+    @Query("SELECT COUNT(m) FROM Music m WHERE m.genre = ?1")
+    long countByGenre(String genre);
+
     @Query("SELECT m.genre, COUNT(m) FROM Music m GROUP BY m.genre")
     List<Object[]> countByGenreGroupBy();
 
-    @Query("SELECT AVG(r.rating) FROM Review r JOIN r.music m")
+    @Query("SELECT AVG(m.averageRating) FROM Music m WHERE m.averageRating IS NOT NULL")
     Double getAverageRating();
 
-    // Additional search and filter methods
-    List<Music> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
+    // NEW: Flagged content methods
+    Page<Music> findByIsFlaggedTrue(Pageable pageable);
 
-    Page<Music> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    long countByIsFlaggedTrue();
 
-    // Find music by multiple criteria
-    @Query("SELECT m FROM Music m WHERE " +
-           "(:genre IS NULL OR m.genre = :genre) AND " +
-           "(:category IS NULL OR m.category = :category) AND " +
-           "(:minPrice IS NULL OR m.price >= :minPrice) AND " +
-           "(:maxPrice IS NULL OR m.price <= :maxPrice)")
-    Page<Music> findByMultipleCriteria(@Param("genre") String genre,
-                                     @Param("category") String category,
-                                     @Param("minPrice") BigDecimal minPrice,
-                                     @Param("maxPrice") BigDecimal maxPrice,
-                                     Pageable pageable);
+    @Query("SELECT AVG(m.averageRating) FROM Music m WHERE m.averageRating IS NOT NULL")
+    BigDecimal getAverageRatingAcrossAll();
 
-    // Count methods for analytics
-    long countByGenre(String genre);
-    long countByCategory(String category);
-    long countByArtistUsername(String artistUsername);
+    @Query("SELECT m FROM Music m WHERE m.averageRating IS NOT NULL ORDER BY m.averageRating DESC")
+    List<Music> findTopRatedMusic(Pageable pageable);
+
+    @Query("SELECT new map(m.genre as genre, COUNT(m) as count) FROM Music m GROUP BY m.genre")
+    Map<String, Long> countByGenreGrouped();
+
+    @Query("SELECT new map(m.category as category, COUNT(m) as count) FROM Music m GROUP BY m.category")
+    Map<String, Long> countByCategoryGrouped();
+
+    @Query("SELECT new map(m.artistUsername as artist, COUNT(m) as totalTracks, AVG(m.averageRating) as avgRating, SUM(m.totalReviews) as totalReviews) FROM Music m GROUP BY m.artistUsername")
+    List<Map<String, Object>> getArtistPerformanceStats();
 }

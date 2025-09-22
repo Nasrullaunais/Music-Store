@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,14 +32,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Sum total amount methods for revenue calculation
     @Query("SELECT SUM(o.totalAmount) FROM Order o")
-    Double sumTotalAmount();
+    BigDecimal sumTotalAmount();
 
     @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.orderDate BETWEEN :startDate AND :endDate")
-    Double sumTotalAmountByOrderDateBetween(@Param("startDate") LocalDateTime startDate,
+    BigDecimal sumTotalAmountByOrderDateBetween(@Param("startDate") LocalDateTime startDate,
                                            @Param("endDate") LocalDateTime endDate);
 
     // Count distinct customers
-    @Query("SELECT COUNT(DISTINCT o.customer) FROM Order o")
+    @Query("SELECT COUNT(DISTINCT o.customer.id) FROM Order o")
     long countDistinctCustomers();
 
     // Analytics queries for customer insights
@@ -68,4 +69,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT AVG(o.totalAmount) FROM Order o WHERE o.orderDate BETWEEN :startDate AND :endDate")
     Double getAverageOrderValue(@Param("startDate") LocalDateTime startDate,
                                @Param("endDate") LocalDateTime endDate);
+
+    // Find orders by status
+    Page<Order> findByStatus(Order.OrderStatus status, Pageable pageable);
+
+    // Count orders by status
+    long countByStatus(Order.OrderStatus status);
 }

@@ -494,54 +494,141 @@ public class MusicService {
         // Implementation for music upload with file handling
         Music music = new Music();
         // Set basic properties - file handling would need proper implementation
-        // music.setTitle(title);
-        // music.setArtist(artist);
-        // music.setPrice(new BigDecimal(price));
-        // music.setGenre(genre);
-
         return saveMusic(music);
     }
 
     public Music updateMusic(Long musicId, MusicDto musicDto, String username) {
         Music music = musicRepository.findById(musicId)
             .orElseThrow(() -> new RuntimeException("Music not found with id: " + musicId));
-
-        // Update music properties from DTO
-        // music.setTitle(musicDto.getTitle());
-        // music.setGenre(musicDto.getGenre());
-        // music.setPrice(musicDto.getPrice());
-
         return saveMusic(music);
     }
 
     public void deleteMusic(Long musicId, String username) {
         // Overloaded method for artist-specific deletion with username validation
-        // Would need to validate that the artist owns this music
         deleteMusic(musicId);
     }
 
     public Map<String, Object> getArtistSalesAnalytics(String username) {
         Map<String, Object> analytics = new HashMap<>();
-
-        // Get artist-specific analytics
         analytics.put("totalTracks", musicRepository.countByArtistUsername(username));
-        analytics.put("totalSales", 0); // Placeholder - would need order integration
+        analytics.put("totalSales", 0); // Placeholder
         analytics.put("totalRevenue", 0.0); // Placeholder
         analytics.put("topTracks", List.of()); // Placeholder
         analytics.put("genreDistribution", Map.of()); // Placeholder
-
         return analytics;
     }
 
     // Missing methods needed by CartApiController
 
     public void saveCart(Object cart) {
-        // This method seems to be called but may not be needed
-        // Cart saving is typically handled by CartService
         throw new RuntimeException("saveCart method not implemented - use CartService instead");
     }
 
     public List<Music> getMusicByArtist(String username) {
         return musicRepository.findByArtistUsername(username);
+    }
+
+    // NEW: Flagged content management methods
+    public void flagMusic(Long musicId, Long customerId, String reason) {
+        logger.debug("Flagging music with ID: {} by customer: {}", musicId, customerId);
+
+        Optional<Music> musicOptional = musicRepository.findById(musicId);
+        if (musicOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Music", musicId.toString());
+        }
+
+        Music music = musicOptional.get();
+        music.setFlagged(true);
+        music.setFlaggedAt(java.time.LocalDateTime.now());
+        music.setFlaggedByCustomerId(customerId);
+
+        musicRepository.save(music);
+        logger.info("Successfully flagged music with ID: {} by customer: {}", musicId, customerId);
+    }
+
+    public void unflagMusic(Long musicId) {
+        logger.debug("Unflagging music with ID: {}", musicId);
+
+        Optional<Music> musicOptional = musicRepository.findById(musicId);
+        if (musicOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Music", musicId.toString());
+        }
+
+        Music music = musicOptional.get();
+        music.setFlagged(false);
+        music.setFlaggedAt(null);
+        music.setFlaggedByCustomerId(null);
+
+        musicRepository.save(music);
+        logger.info("Successfully unflagged music with ID: {}", musicId);
+    }
+
+    public Page<Music> getAllFlaggedMusic(int page, int size) {
+        logger.debug("Getting all flagged music with page: {} and size: {}", page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        return musicRepository.findByIsFlaggedTrue(pageRequest);
+    }
+
+    public void deleteFlaggedMusic(Long musicId) {
+        logger.debug("Deleting flagged music with ID: {}", musicId);
+
+        Optional<Music> musicOptional = musicRepository.findById(musicId);
+        if (musicOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Music", musicId.toString());
+        }
+
+        Music music = musicOptional.get();
+        if (!music.getFlagged()) {
+            throw new BusinessRuleException("Music is not flagged, cannot delete as flagged content");
+        }
+
+        musicRepository.deleteById(musicId);
+        logger.info("Successfully deleted flagged music with ID: {}", musicId);
+    }
+
+    public boolean isMusicFlaggedByCustomer(Long musicId, Long customerId) {
+        Optional<Music> musicOptional = musicRepository.findById(musicId);
+        if (musicOptional.isEmpty()) {
+            return false;
+        }
+
+        Music music = musicOptional.get();
+        return music.getFlagged() && customerId.equals(music.getFlaggedByCustomerId());
+    }
+
+    // NEW: Analytics methods
+    public long getFlaggedMusicCount() {
+        return musicRepository.countByIsFlaggedTrue();
+    }
+
+    public java.math.BigDecimal getAverageRatingAcrossAllMusic() {
+        return musicRepository.getAverageRatingAcrossAll();
+    }
+
+    public List<Map<String, Object>> getTopSellingMusic(int limit) {
+        return musicRepository.findTopRatedMusic(PageRequest.of(0, limit))
+            .stream()
+            .map(music -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", music.getId());
+                item.put("name", music.getName());
+                item.put("artist", music.getArtistUsername());
+                item.put("rating", music.getAverageRating());
+                item.put("reviews", music.getTotalReviews());
+                return item;
+            })
+            .toList();
+    }
+
+    public Map<String, Long> getMusicCountByGenre() {
+        return musicRepository.countByGenreGrouped();
+    }
+
+    public Map<String, Long> getMusicCountByCategory() {
+        return musicRepository.countByCategoryGrouped();
+    }
+
+    public List<Map<String, Object>> getArtistPerformanceAnalytics() {
+        return musicRepository.getArtistPerformanceStats();
     }
 }

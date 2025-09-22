@@ -1056,4 +1056,615 @@ The new system requires these tables:
 - Search functionality works across both subjects and message content
 - Simple list operations replace complex paginated queries for better maintainability
 
-This comprehensive ticket system provides a modern, chat-like support experience while maintaining the structure needed for effective customer service management across multiple user roles.
+# Music Store Admin API Documentation
+
+## Overview
+This document provides comprehensive API documentation for the enhanced Music Store admin functionality, including flagged content management, review moderation, advanced analytics, and server management capabilities.
+
+## Admin Features Implemented
+
+### 1. Flagged Content Management
+- Music flagging system with customer-initiated flagging
+- Admin endpoints to view, manage, and remove flagged content
+- Automatic flagging metadata tracking
+
+### 2. Review Management
+- Admin can view all reviews with sorting and pagination
+- Review deletion capabilities with automatic rating recalculation
+- Review analytics and insights
+
+### 3. Enhanced Analytics
+- Real-time system metrics and performance data
+- User growth analytics and engagement metrics
+- Sales and revenue analytics with detailed breakdowns
+- Music performance analytics by genre, artist, and popularity
+
+### 4. Server Management
+- Graceful server shutdown capabilities
+- System status monitoring
+- Performance metrics tracking
+
+---
+
+## Authentication
+All admin endpoints require authentication with `ROLE_ADMIN` privileges.
+
+**Headers Required:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+---
+
+## API Endpoints
+
+### Music Flagging (Customer Endpoints)
+
+#### Flag Music Content
+```http
+POST /api/music/{musicId}/flag
+```
+
+**Description:** Allows customers to flag inappropriate music content
+
+**Request Body:**
+```json
+{
+  "reason": "Inappropriate content"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Music flagged successfully",
+  "timestamp": "2025-09-22T10:30:00",
+  "musicId": 123
+}
+```
+
+#### Check Flag Status
+```http
+GET /api/music/{musicId}/flag-status
+```
+
+**Response:**
+```json
+{
+  "musicId": 123,
+  "isFlagged": true,
+  "customerId": 456
+}
+```
+
+---
+
+### Admin Flagged Content Management
+
+#### Get All Flagged Music
+```http
+GET /api/admin/music/flagged?page=0&size=10
+```
+
+**Description:** Retrieve paginated list of flagged music content
+
+**Query Parameters:**
+- `page` (int, default: 0): Page number
+- `size` (int, default: 10): Items per page
+
+**Response:**
+```json
+{
+  "content": [
+    {
+      "id": 123,
+      "name": "Song Title",
+      "artistUsername": "artist123",
+      "flaggedAt": "2025-09-22T09:15:00",
+      "flaggedByCustomerId": 456,
+      "reason": "Inappropriate content"
+    }
+  ],
+  "totalElements": 25,
+  "totalPages": 3,
+  "number": 0,
+  "size": 10
+}
+```
+
+#### Unflag Music
+```http
+POST /api/admin/music/{musicId}/unflag
+```
+
+**Description:** Remove flag from music content after review
+
+**Response:**
+```json
+{
+  "message": "Music unflagged successfully",
+  "timestamp": "2025-09-22T10:45:00"
+}
+```
+
+#### Delete Flagged Music
+```http
+DELETE /api/admin/music/{musicId}/flagged
+```
+
+**Description:** Permanently delete flagged music content
+
+**Response:**
+```json
+{
+  "message": "Flagged music deleted successfully",
+  "timestamp": "2025-09-22T10:50:00"
+}
+```
+
+---
+
+### Admin Review Management
+
+#### Get All Reviews
+```http
+GET /api/admin/reviews?page=0&size=10&sortBy=date
+```
+
+**Description:** Retrieve all reviews with sorting and pagination
+
+**Query Parameters:**
+- `page` (int, default: 0): Page number
+- `size` (int, default: 10): Items per page
+- `sortBy` (string): Sort criteria - "date", "rating", or default
+
+**Response:**
+```json
+{
+  "content": [
+    {
+      "id": 789,
+      "musicId": 123,
+      "customerUsername": "customer123",
+      "rating": 4,
+      "comment": "Great song!",
+      "createdAt": "2025-09-22T08:30:00",
+      "updatedAt": "2025-09-22T08:30:00"
+    }
+  ],
+  "totalElements": 150,
+  "totalPages": 15,
+  "number": 0,
+  "size": 10
+}
+```
+
+#### Delete Review
+```http
+DELETE /api/admin/reviews/{reviewId}
+```
+
+**Description:** Delete a review and recalculate music ratings
+
+**Response:**
+```json
+{
+  "message": "Review deleted successfully",
+  "timestamp": "2025-09-22T11:00:00"
+}
+```
+
+#### Get Flagged Reviews
+```http
+GET /api/admin/reviews/flagged?page=0&size=10
+```
+
+**Description:** Retrieve flagged reviews (placeholder for future implementation)
+
+---
+
+### Enhanced Analytics
+
+#### System Overview
+```http
+GET /api/admin/analytics/overview
+```
+
+**Description:** Get comprehensive system overview with key metrics
+
+**Response:**
+```json
+{
+  "totalUsers": 1250,
+  "totalMusic": 5600,
+  "totalOrders": 8900,
+  "totalRevenue": 125000.50,
+  "activeTickets": 15,
+  "totalReviews": 3400,
+  "flaggedMusic": 8,
+  "averageRating": 4.2,
+  "todayRegistrations": 12,
+  "todayOrders": 45,
+  "todayRevenue": 2100.75
+}
+```
+
+#### Detailed Analytics
+```http
+GET /api/admin/analytics/detailed?startDate=2025-09-01&endDate=2025-09-22
+```
+
+**Description:** Get detailed analytics for specified date range
+
+**Query Parameters:**
+- `startDate` (date, optional): Start date (YYYY-MM-DD)
+- `endDate` (date, optional): End date (YYYY-MM-DD)
+
+**Response:**
+```json
+{
+  "userGrowth": {
+    "newUsers": 450,
+    "growthRate": 12.5,
+    "activeUsers": 980
+  },
+  "usersByRole": {
+    "CUSTOMER": 1100,
+    "ARTIST": 120,
+    "STAFF": 25,
+    "ADMIN": 5
+  },
+  "salesAnalytics": {
+    "totalSales": 8900,
+    "revenue": 125000.50,
+    "averageOrderValue": 14.04
+  },
+  "revenueByPeriod": [
+    {
+      "date": "2025-09-20",
+      "revenue": 1850.25
+    }
+  ],
+  "topSellingMusic": [
+    {
+      "id": 123,
+      "name": "Popular Song",
+      "artist": "artist123",
+      "sales": 450,
+      "revenue": 6750.00
+    }
+  ],
+  "musicByGenre": {
+    "Pop": 1200,
+    "Rock": 950,
+    "Jazz": 680
+  },
+  "musicByCategory": {
+    "Single": 3200,
+    "Album": 2400
+  },
+  "artistPerformance": [
+    {
+      "artist": "artist123",
+      "totalTracks": 25,
+      "avgRating": 4.5,
+      "totalReviews": 350
+    }
+  ],
+  "reviewAnalytics": {
+    "totalReviews": 3400,
+    "averageRating": 4.2,
+    "reviewsThisWeek": 125,
+    "reviewsThisMonth": 520
+  },
+  "ratingDistribution": {
+    "5 stars": 1200,
+    "4 stars": 1100,
+    "3 stars": 650,
+    "2 stars": 300,
+    "1 stars": 150
+  },
+  "ticketAnalytics": {
+    "OPEN": 8,
+    "IN_PROGRESS": 5,
+    "CLOSED": 125
+  },
+  "ticketResolutionTime": "2.5 days"
+}
+```
+
+#### Performance Metrics
+```http
+GET /api/admin/analytics/performance
+```
+
+**Description:** Get system performance metrics
+
+**Response:**
+```json
+{
+  "memoryUsed": 512,
+  "memoryTotal": 1024,
+  "memoryFree": 512,
+  "processors": 4,
+  "databaseConnections": "Not implemented",
+  "activeUsers": 245,
+  "systemUptime": "5 days, 12 hours, 30 minutes"
+}
+```
+
+#### Comprehensive Report
+```http
+GET /api/admin/reports/comprehensive?startDate=2025-09-01&endDate=2025-09-22&format=pdf
+```
+
+**Description:** Generate comprehensive system report
+
+**Query Parameters:**
+- `startDate` (date, optional): Start date
+- `endDate` (date, optional): End date
+- `format` (string, default: "pdf"): Report format
+
+**Response:**
+```json
+{
+  "generated_at": "2025-09-22T11:15:00",
+  "period": {
+    "start": "2025-09-01",
+    "end": "2025-09-22"
+  },
+  "format": "pdf",
+  "overview": { /* System overview data */ },
+  "detailed_analytics": { /* Detailed analytics data */ },
+  "performance_metrics": { /* Performance metrics data */ }
+}
+```
+
+---
+
+### Server Management
+
+#### Server Shutdown
+```http
+POST /api/admin/system/shutdown?delaySeconds=10&reason=Maintenance
+```
+
+**Description:** Initiate graceful server shutdown
+
+**Query Parameters:**
+- `delaySeconds` (int, default: 0): Delay before shutdown in seconds
+- `reason` (string, optional): Reason for shutdown
+
+**Response:**
+```json
+{
+  "message": "Server shutdown initiated",
+  "delay_seconds": 10,
+  "reason": "Maintenance",
+  "shutdown_time": "2025-09-22T11:25:10"
+}
+```
+
+#### System Status
+```http
+GET /api/admin/system/status
+```
+
+**Description:** Get current system status
+
+**Response:**
+```json
+{
+  "status": "running",
+  "uptime": "5 days, 12 hours, 30 minutes",
+  "timestamp": "2025-09-22T11:20:00",
+  "version": "1.0.0"
+}
+```
+
+---
+
+### System Settings
+
+#### Create Backup
+```http
+POST /api/admin/settings/backup
+```
+
+**Description:** Initiate system backup
+
+**Response:**
+```json
+{
+  "initiated_at": "2025-09-22T11:30:00",
+  "status": "initiated",
+  "message": "System backup initiated successfully"
+}
+```
+
+---
+
+## Data Models
+
+### Music Entity (with flagging)
+```json
+{
+  "id": 123,
+  "name": "Song Title",
+  "description": "Song description",
+  "price": 15.99,
+  "artistUsername": "artist123",
+  "genre": "Pop",
+  "category": "Single",
+  "averageRating": 4.2,
+  "totalReviews": 85,
+  "isFlagged": false,
+  "flaggedAt": null,
+  "flaggedByCustomerId": null,
+  "createdAt": "2025-09-20T10:00:00",
+  "updatedAt": "2025-09-22T09:30:00"
+}
+```
+
+### Review Entity
+```json
+{
+  "id": 789,
+  "musicId": 123,
+  "customerId": 456,
+  "customerUsername": "customer123",
+  "rating": 4,
+  "comment": "Great song!",
+  "createdAt": "2025-09-22T08:30:00",
+  "updatedAt": "2025-09-22T08:30:00"
+}
+```
+
+---
+
+## Error Responses
+
+### Standard Error Format
+```json
+{
+  "message": "Error description",
+  "timestamp": "2025-09-22T11:35:00"
+}
+```
+
+### Common HTTP Status Codes
+- `200 OK`: Success
+- `400 Bad Request`: Invalid request parameters
+- `401 Unauthorized`: Authentication required
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error
+
+---
+
+## Implementation Notes
+
+### Frontend Integration Tips
+
+1. **Pagination**: All list endpoints support pagination with `page` and `size` parameters
+2. **Sorting**: Many endpoints support sorting via `sortBy` parameter
+3. **Date Ranges**: Use ISO 8601 date format (YYYY-MM-DD) for date parameters
+4. **Real-time Updates**: Consider implementing WebSocket connections for real-time admin dashboard updates
+5. **Error Handling**: Always handle error responses gracefully with user-friendly messages
+
+### Security Considerations
+
+1. **Role-based Access**: All admin endpoints require `ROLE_ADMIN`
+2. **Audit Logging**: All admin actions should be logged for security auditing
+3. **Rate Limiting**: Consider implementing rate limiting for admin endpoints
+4. **Input Validation**: All inputs are validated server-side
+
+### Performance Recommendations
+
+1. **Caching**: Implement caching for frequently accessed analytics data
+2. **Batch Operations**: Use batch operations for bulk data management
+3. **Async Processing**: Large reports should be generated asynchronously
+4. **Database Indexing**: Ensure proper indexing for flagged content and analytics queries
+
+---
+
+## Example Frontend Implementation
+
+### Admin Dashboard Component
+```javascript
+// Example React component for admin dashboard
+import React, { useState, useEffect } from 'react';
+
+const AdminDashboard = () => {
+  const [overview, setOverview] = useState({});
+  const [flaggedMusic, setFlaggedMusic] = useState([]);
+
+  useEffect(() => {
+    // Fetch system overview
+    fetch('/api/admin/analytics/overview', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => setOverview(data));
+
+    // Fetch flagged music
+    fetch('/api/admin/music/flagged?page=0&size=10', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => setFlaggedMusic(data.content));
+  }, []);
+
+  const handleUnflagMusic = async (musicId) => {
+    try {
+      await fetch(`/api/admin/music/${musicId}/unflag`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      // Refresh flagged music list
+      // ... refresh logic
+    } catch (error) {
+      console.error('Error unflagging music:', error);
+    }
+  };
+
+  return (
+    <div className="admin-dashboard">
+      <h1>Admin Dashboard</h1>
+      
+      {/* System Overview */}
+      <div className="overview-cards">
+        <div className="card">
+          <h3>Total Users</h3>
+          <p>{overview.totalUsers}</p>
+        </div>
+        <div className="card">
+          <h3>Flagged Content</h3>
+          <p>{overview.flaggedMusic}</p>
+        </div>
+        {/* ... more overview cards */}
+      </div>
+
+      {/* Flagged Music Management */}
+      <div className="flagged-music">
+        <h2>Flagged Music</h2>
+        {flaggedMusic.map(music => (
+          <div key={music.id} className="flagged-item">
+            <h4>{music.name}</h4>
+            <p>Artist: {music.artistUsername}</p>
+            <p>Flagged: {new Date(music.flaggedAt).toLocaleDateString()}</p>
+            <button onClick={() => handleUnflagMusic(music.id)}>
+              Unflag
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
+```
+
+---
+
+This comprehensive API documentation provides all the necessary information for frontend developers to integrate with the enhanced admin functionality. The system now supports:
+
+✅ **Music flagging system** - Customers can flag inappropriate content
+✅ **Admin flagged content management** - View, unflag, and delete flagged music
+✅ **Review management** - View all reviews and delete when necessary
+✅ **Enhanced analytics** - Comprehensive system metrics and insights
+✅ **Server management** - Graceful shutdown and system monitoring
+✅ **Performance metrics** - Real-time system performance data
+
+All endpoints are properly secured, documented, and ready for frontend integration.

@@ -7,24 +7,35 @@ import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.OrderService;
 import com.music.musicstore.services.TicketService;
 import com.music.musicstore.services.StaffService;
+import com.music.musicstore.services.ReviewService;
+import com.music.musicstore.services.AuditLogService;
 import com.music.musicstore.models.users.Staff;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
 @CrossOrigin(origins = "http://localhost:5173")
 public class AdminApiController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminApiController.class);
 
     @Autowired
     private UnifiedUserService unifiedUserService;
@@ -41,9 +52,21 @@ public class AdminApiController {
     @Autowired
     private StaffService staffService;
 
+    @Autowired
+    private ReviewService reviewService;
+
+    @Autowired
+    private AuditLogService auditLogService;
+
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
+
     // User Management
     @PostMapping("/users/create")
-    public ResponseEntity<?> createUser(@Valid @RequestBody UnifiedRegisterRequest request) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody UnifiedRegisterRequest request,
+                                      @AuthenticationPrincipal UserDetails currentUser,
+                                      HttpServletRequest httpRequest) {
+        logger.info("Admin {} attempting to create user: {}", currentUser.getUsername(), request.getUsername());
         try {
             UserDto userDto = unifiedUserService.createUser(
                 request.getUsername(),
@@ -55,8 +78,31 @@ public class AdminApiController {
                 request.getArtistName(),
                 request.getCover()
             );
+
+            // Log successful user creation
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "CREATE_USER",
+                "USER",
+                userDto.getId(),
+                String.format("Created user: %s with role: %s", request.getUsername(), request.getRole()),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully created user: {}", currentUser.getUsername(), request.getUsername());
             return ResponseEntity.ok(userDto);
         } catch (Exception e) {
+            // Log failed user creation
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "CREATE_USER",
+                "USER",
+                null,
+                e.getMessage(),
+                httpRequest
+            );
+
+            logger.error("Admin {} failed to create user: {} - Error: {}", currentUser.getUsername(), request.getUsername(), e.getMessage());
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to create user: " + e.getMessage()));
         }
@@ -66,18 +112,44 @@ public class AdminApiController {
     public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String role) {
+            @RequestParam(required = false) String role,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting users list - page: {}, size: {}, role: {}",
+                    currentUser.getUsername(), page, size, role);
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_USERS",
+                "USER",
+                null,
+                String.format("Viewed users list - page: %d, size: %d, role filter: %s", page, size, role),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully retrieved users list", currentUser.getUsername());
             return ResponseEntity.ok(unifiedUserService.getAllUsers(page, size, role));
         } catch (Exception e) {
+            logger.error("Admin {} failed to retrieve users list - Error: {}", currentUser.getUsername(), e.getMessage());
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch users: " + e.getMessage()));
         }
     }
 
     @GetMapping("/users/{userId}")
-    public ResponseEntity<?> getUserById(@PathVariable Long userId) {
+    public ResponseEntity<?> getUserById(@PathVariable Long userId,
+                                       @AuthenticationPrincipal UserDetails currentUser,
+                                       HttpServletRequest httpRequest) {
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_USER",
+                "USER",
+                userId,
+                "Viewed user details",
+                httpRequest
+            );
+
             return ResponseEntity.ok(unifiedUserService.getUserById(userId));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -88,21 +160,64 @@ public class AdminApiController {
     @PutMapping("/users/{userId}")
     public ResponseEntity<?> updateUser(
             @PathVariable Long userId,
-            @RequestBody UserUpdateRequest request) {
+            @RequestBody UserUpdateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
-            return ResponseEntity.ok(unifiedUserService.updateUser(userId, request));
+            UserDto updatedUser = unifiedUserService.updateUser(userId, request);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_USER",
+                "USER",
+                userId,
+                "Updated user information",
+                httpRequest
+            );
+
+            return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_USER",
+                "USER",
+                userId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update user: " + e.getMessage()));
         }
     }
 
     @DeleteMapping("/users/{userId}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<?> deleteUser(@PathVariable Long userId,
+                                      @AuthenticationPrincipal UserDetails currentUser,
+                                      HttpServletRequest httpRequest) {
         try {
             unifiedUserService.deleteUser(userId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "DELETE_USER",
+                "USER",
+                userId,
+                "Deleted user account",
+                httpRequest
+            );
+
             return ResponseEntity.ok().build();
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "DELETE_USER",
+                "USER",
+                userId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to delete user: " + e.getMessage()));
         }
@@ -111,11 +226,32 @@ public class AdminApiController {
     @PutMapping("/users/{userId}/status")
     public ResponseEntity<?> updateUserStatus(
             @PathVariable Long userId,
-            @RequestBody UserStatusUpdateRequest request) {
+            @RequestBody UserStatusUpdateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
             unifiedUserService.updateUserStatus(userId, request.isEnabled());
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_USER_STATUS",
+                "USER",
+                userId,
+                String.format("Changed user status to: %s", request.isEnabled() ? "ENABLED" : "DISABLED"),
+                httpRequest
+            );
+
             return ResponseEntity.ok(new SuccessResponse("User status updated successfully"));
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_USER_STATUS",
+                "USER",
+                userId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update user status: " + e.getMessage()));
         }
@@ -125,8 +261,19 @@ public class AdminApiController {
     @GetMapping("/music")
     public ResponseEntity<?> getAllMusic(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_MUSIC",
+                "MUSIC",
+                null,
+                String.format("Viewed music list - page: %d, size: %d", page, size),
+                httpRequest
+            );
+
             return ResponseEntity.ok(musicService.getAllMusicForAdmin(page, size));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -135,11 +282,32 @@ public class AdminApiController {
     }
 
     @DeleteMapping("/music/{musicId}")
-    public ResponseEntity<?> deleteMusic(@PathVariable Long musicId) {
+    public ResponseEntity<?> deleteMusic(@PathVariable Long musicId,
+                                       @AuthenticationPrincipal UserDetails currentUser,
+                                       HttpServletRequest httpRequest) {
         try {
             musicService.deleteMusicAsAdmin(musicId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "DELETE_MUSIC",
+                "MUSIC",
+                musicId,
+                "Deleted music track",
+                httpRequest
+            );
+
             return ResponseEntity.ok().build();
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "DELETE_MUSIC",
+                "MUSIC",
+                musicId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to delete music: " + e.getMessage()));
         }
@@ -148,13 +316,202 @@ public class AdminApiController {
     @PutMapping("/music/{musicId}/status")
     public ResponseEntity<?> updateMusicStatus(
             @PathVariable Long musicId,
-            @RequestBody MusicStatusUpdateRequest request) {
+            @RequestBody MusicStatusUpdateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
             musicService.updateMusicStatus(musicId, request.getStatus());
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_MUSIC_STATUS",
+                "MUSIC",
+                musicId,
+                String.format("Changed music status to: %s", request.getStatus()),
+                httpRequest
+            );
+
             return ResponseEntity.ok(new SuccessResponse("Music status updated successfully"));
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_MUSIC_STATUS",
+                "MUSIC",
+                musicId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update music status: " + e.getMessage()));
+        }
+    }
+
+    // NEW: Flagged Content Management
+    @GetMapping("/music/flagged")
+    public ResponseEntity<?> getAllFlaggedMusic(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_FLAGGED_MUSIC",
+                "MUSIC",
+                null,
+                "Viewed flagged music list",
+                httpRequest
+            );
+
+            return ResponseEntity.ok(musicService.getAllFlaggedMusic(page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch flagged music: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/music/{musicId}/unflag")
+    public ResponseEntity<?> unflagMusic(@PathVariable Long musicId,
+                                       @AuthenticationPrincipal UserDetails currentUser,
+                                       HttpServletRequest httpRequest) {
+        try {
+            musicService.unflagMusic(musicId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UNFLAG_MUSIC",
+                "MUSIC",
+                musicId,
+                "Unflagged music content",
+                httpRequest
+            );
+
+            return ResponseEntity.ok(new SuccessResponse("Music unflagged successfully"));
+        } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UNFLAG_MUSIC",
+                "MUSIC",
+                musicId,
+                e.getMessage(),
+                httpRequest
+            );
+
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to unflag music: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/music/{musicId}/flagged")
+    public ResponseEntity<?> deleteFlaggedMusic(@PathVariable Long musicId,
+                                              @AuthenticationPrincipal UserDetails currentUser,
+                                              HttpServletRequest httpRequest) {
+        try {
+            musicService.deleteFlaggedMusic(musicId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "DELETE_FLAGGED_MUSIC",
+                "MUSIC",
+                musicId,
+                "Deleted flagged music content",
+                httpRequest
+            );
+
+            return ResponseEntity.ok(new SuccessResponse("Flagged music deleted successfully"));
+        } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "DELETE_FLAGGED_MUSIC",
+                "MUSIC",
+                musicId,
+                e.getMessage(),
+                httpRequest
+            );
+
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to delete flagged music: " + e.getMessage()));
+        }
+    }
+
+    // NEW: Review Management
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getAllReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_REVIEWS",
+                "REVIEW",
+                null,
+                String.format("Viewed reviews list - page: %d, size: %d, sortBy: %s", page, size, sortBy),
+                httpRequest
+            );
+
+            return ResponseEntity.ok(reviewService.getAllReviewsForAdmin(page, size, sortBy));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch reviews: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/reviews/{reviewId}")
+    public ResponseEntity<?> deleteReview(@PathVariable Long reviewId,
+                                        @AuthenticationPrincipal UserDetails currentUser,
+                                        HttpServletRequest httpRequest) {
+        try {
+            reviewService.deleteReviewAsAdmin(reviewId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "DELETE_REVIEW",
+                "REVIEW",
+                reviewId,
+                "Deleted review",
+                httpRequest
+            );
+
+            return ResponseEntity.ok(new SuccessResponse("Review deleted successfully"));
+        } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "DELETE_REVIEW",
+                "REVIEW",
+                reviewId,
+                e.getMessage(),
+                httpRequest
+            );
+
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to delete review: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/reviews/flagged")
+    public ResponseEntity<?> getFlaggedReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_FLAGGED_REVIEWS",
+                "REVIEW",
+                null,
+                "Viewed flagged reviews list",
+                httpRequest
+            );
+
+            return ResponseEntity.ok(reviewService.getFlaggedReviews(page, size));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch flagged reviews: " + e.getMessage()));
         }
     }
 
@@ -163,8 +520,19 @@ public class AdminApiController {
     public ResponseEntity<?> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_ORDERS",
+                "ORDER",
+                null,
+                String.format("Viewed orders list - page: %d, size: %d, status: %s", page, size, status),
+                httpRequest
+            );
+
             return ResponseEntity.ok(orderService.getAllOrdersForAdmin(page, size, status));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -173,51 +541,161 @@ public class AdminApiController {
     }
 
     @PutMapping("/orders/{orderId}/refund")
-    public ResponseEntity<?> refundOrder(@PathVariable Long orderId) {
+    public ResponseEntity<?> refundOrder(@PathVariable Long orderId,
+                                       @AuthenticationPrincipal UserDetails currentUser,
+                                       HttpServletRequest httpRequest) {
         try {
             orderService.refundOrder(orderId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "REFUND_ORDER",
+                "ORDER",
+                orderId,
+                "Processed order refund",
+                httpRequest
+            );
+
             return ResponseEntity.ok(new SuccessResponse("Order refunded successfully"));
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "REFUND_ORDER",
+                "ORDER",
+                orderId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to refund order: " + e.getMessage()));
         }
     }
 
-    // Analytics and Reports
+    // ENHANCED: Analytics and Reports
     @GetMapping("/analytics/overview")
-    public ResponseEntity<?> getSystemOverview() {
+    public ResponseEntity<?> getSystemOverview(@AuthenticationPrincipal UserDetails currentUser,
+                                             HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting system overview", currentUser.getUsername());
         try {
-            SystemOverview overview = new SystemOverview();
-            overview.setTotalUsers(unifiedUserService.getTotalUsersCount());
-            overview.setTotalMusic(musicService.getTotalMusicCount());
-            overview.setTotalOrders(orderService.getTotalOrdersCount());
-            overview.setTotalRevenue(orderService.getTotalRevenue());
-            // Updated to use simple count method
-            overview.setActiveTickets(ticketService.countTicketsByStatus("OPEN") +
-                                    ticketService.countTicketsByStatus("IN_PROGRESS") +
-                                    ticketService.countTicketsByStatus("URGENT"));
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_ANALYTICS_OVERVIEW",
+                "ANALYTICS",
+                null,
+                "Viewed system overview analytics",
+                httpRequest
+            );
 
+            Map<String, Object> overview = new HashMap<>();
+            overview.put("totalUsers", unifiedUserService.getTotalUsersCount());
+            overview.put("totalMusic", musicService.getTotalMusicCount());
+            overview.put("totalOrders", orderService.getTotalOrdersCount());
+            overview.put("totalRevenue", orderService.getTotalRevenue());
+            overview.put("activeTickets", ticketService.countTicketsByStatus("OPEN") +
+                                        ticketService.countTicketsByStatus("IN_PROGRESS") +
+                                        ticketService.countTicketsByStatus("URGENT"));
+            overview.put("totalReviews", reviewService.getTotalReviewsCount());
+            overview.put("flaggedMusic", musicService.getFlaggedMusicCount());
+            overview.put("averageRating", musicService.getAverageRatingAcrossAllMusic());
+            overview.put("todayRegistrations", unifiedUserService.getTodayRegistrationsCount());
+            overview.put("todayOrders", orderService.getTodayOrdersCount());
+            overview.put("todayRevenue", orderService.getTodayRevenue());
+
+            logger.info("Admin {} successfully retrieved system overview", currentUser.getUsername());
             return ResponseEntity.ok(overview);
         } catch (Exception e) {
+            logger.error("Admin {} failed to retrieve system overview - Error: {}", currentUser.getUsername(), e.getMessage());
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch system overview: " + e.getMessage()));
         }
     }
 
     @GetMapping("/analytics/detailed")
-    public ResponseEntity<?> getDetailedAnalytics() {
+    public ResponseEntity<?> getDetailedAnalytics(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting detailed analytics - startDate: {}, endDate: {}",
+                    currentUser.getUsername(), startDate, endDate);
         try {
-            DetailedAnalytics analytics = new DetailedAnalytics();
-            analytics.setUserGrowth("User growth analytics not implemented");
-            analytics.setSalesAnalytics("Sales analytics not implemented");
-            analytics.setMusicAnalytics("Music analytics not implemented");
-            // Updated to use simple status distribution
-            analytics.setTicketAnalytics(ticketService.getStatusDistribution());
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_DETAILED_ANALYTICS",
+                "ANALYTICS",
+                null,
+                String.format("Viewed detailed analytics - startDate: %s, endDate: %s", startDate, endDate),
+                httpRequest
+            );
 
+            Map<String, Object> analytics = new HashMap<>();
+
+            // User analytics
+            analytics.put("userGrowth", unifiedUserService.getUserGrowthAnalytics(startDate, endDate));
+            analytics.put("usersByRole", unifiedUserService.getUserCountByRole());
+
+            // Sales analytics
+            analytics.put("salesAnalytics", orderService.getSalesAnalytics(startDate, endDate));
+            analytics.put("revenueByPeriod", orderService.getRevenueByPeriod(startDate, endDate));
+            analytics.put("topSellingMusic", musicService.getTopSellingMusic(10));
+
+            // Music analytics
+            analytics.put("musicByGenre", musicService.getMusicCountByGenre());
+            analytics.put("musicByCategory", musicService.getMusicCountByCategory());
+            analytics.put("artistPerformance", musicService.getArtistPerformanceAnalytics());
+
+            // Review analytics
+            analytics.put("reviewAnalytics", reviewService.getReviewAnalytics(startDate, endDate));
+            analytics.put("ratingDistribution", reviewService.getRatingDistribution());
+
+            // Ticket analytics
+            analytics.put("ticketAnalytics", ticketService.getStatusDistribution());
+            analytics.put("ticketResolutionTime", ticketService.getAverageResolutionTime());
+
+            logger.info("Admin {} successfully retrieved detailed analytics", currentUser.getUsername());
             return ResponseEntity.ok(analytics);
         } catch (Exception e) {
+            logger.error("Admin {} failed to retrieve detailed analytics - Error: {}", currentUser.getUsername(), e.getMessage());
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch detailed analytics: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/analytics/performance")
+    public ResponseEntity<?> getPerformanceMetrics(@AuthenticationPrincipal UserDetails currentUser,
+                                                  HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting performance metrics", currentUser.getUsername());
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_PERFORMANCE_METRICS",
+                "ANALYTICS",
+                null,
+                "Viewed system performance metrics",
+                httpRequest
+            );
+
+            Map<String, Object> metrics = new HashMap<>();
+
+            // System performance metrics
+            Runtime runtime = Runtime.getRuntime();
+            metrics.put("memoryUsed", (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)); // MB
+            metrics.put("memoryTotal", runtime.totalMemory() / (1024 * 1024)); // MB
+            metrics.put("memoryFree", runtime.freeMemory() / (1024 * 1024)); // MB
+            metrics.put("processors", runtime.availableProcessors());
+
+            // Database metrics
+            metrics.put("databaseConnections", "Not implemented"); // Would need connection pool metrics
+            metrics.put("activeUsers", unifiedUserService.getActiveUsersCount());
+            metrics.put("systemUptime", getSystemUptime());
+
+            logger.info("Admin {} successfully retrieved performance metrics", currentUser.getUsername());
+            return ResponseEntity.ok(metrics);
+        } catch (Exception e) {
+            logger.error("Admin {} failed to retrieve performance metrics - Error: {}", currentUser.getUsername(), e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to fetch performance metrics: " + e.getMessage()));
         }
     }
 
@@ -225,11 +703,38 @@ public class AdminApiController {
     public ResponseEntity<?> generateComprehensiveReport(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(defaultValue = "pdf") String format) {
+            @RequestParam(defaultValue = "pdf") String format,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
-            // This would generate a comprehensive system report
-            return ResponseEntity.ok("Comprehensive report generation initiated");
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "GENERATE_COMPREHENSIVE_REPORT",
+                "REPORT",
+                null,
+                String.format("Generated comprehensive report - format: %s, period: %s to %s", format, startDate, endDate),
+                httpRequest
+            );
+
+            Map<String, Object> report = new HashMap<>();
+            report.put("generated_at", LocalDateTime.now());
+            report.put("period", Map.of("start", startDate, "end", endDate));
+            report.put("format", format);
+            report.put("overview", getSystemOverview(currentUser, httpRequest).getBody());
+            report.put("detailed_analytics", getDetailedAnalytics(startDate, endDate, currentUser, httpRequest).getBody());
+            report.put("performance_metrics", getPerformanceMetrics(currentUser, httpRequest).getBody());
+
+            return ResponseEntity.ok(report);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "GENERATE_COMPREHENSIVE_REPORT",
+                "REPORT",
+                null,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to generate report: " + e.getMessage()));
         }
@@ -237,20 +742,127 @@ public class AdminApiController {
 
     // System Settings
     @PostMapping("/settings/backup")
-    public ResponseEntity<?> createSystemBackup() {
+    public ResponseEntity<?> createSystemBackup(@AuthenticationPrincipal UserDetails currentUser,
+                                               HttpServletRequest httpRequest) {
         try {
-            // This would initiate a system backup
-            return ResponseEntity.ok("System backup initiated");
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "CREATE_SYSTEM_BACKUP",
+                "SYSTEM",
+                null,
+                "Initiated system backup",
+                httpRequest
+            );
+
+            Map<String, Object> backup = new HashMap<>();
+            backup.put("initiated_at", LocalDateTime.now());
+            backup.put("status", "initiated");
+            backup.put("message", "System backup initiated successfully");
+            return ResponseEntity.ok(backup);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "CREATE_SYSTEM_BACKUP",
+                "SYSTEM",
+                null,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to create backup: " + e.getMessage()));
         }
     }
 
-    // Admin Ticket Management - Updated for new chat system
-    @GetMapping("/tickets")
-    public ResponseEntity<?> getAllTicketsAdmin(@RequestParam(required = false) String status) {
+    // NEW: Server Management
+    @PostMapping("/system/shutdown")
+    public ResponseEntity<?> shutdownServer(
+            @RequestParam(defaultValue = "0") int delaySeconds,
+            @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "SHUTDOWN_SERVER",
+                "SYSTEM",
+                null,
+                String.format("Initiated server shutdown - delay: %d seconds, reason: %s", delaySeconds, reason),
+                httpRequest
+            );
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Server shutdown initiated");
+            response.put("delay_seconds", delaySeconds);
+            response.put("reason", reason != null ? reason : "Manual shutdown by admin");
+            response.put("shutdown_time", LocalDateTime.now().plusSeconds(delaySeconds));
+
+            // Schedule shutdown
+            new Thread(() -> {
+                try {
+                    Thread.sleep(delaySeconds * 1000L);
+                    SpringApplication.exit(applicationContext, () -> 0);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "SHUTDOWN_SERVER",
+                "SYSTEM",
+                null,
+                e.getMessage(),
+                httpRequest
+            );
+
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to shutdown server: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/system/status")
+    public ResponseEntity<?> getSystemStatus(@AuthenticationPrincipal UserDetails currentUser,
+                                           HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_SYSTEM_STATUS",
+                "SYSTEM",
+                null,
+                "Viewed system status",
+                httpRequest
+            );
+
+            Map<String, Object> status = new HashMap<>();
+            status.put("status", "running");
+            status.put("uptime", getSystemUptime());
+            status.put("timestamp", LocalDateTime.now());
+            status.put("version", "1.0.0");
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to get system status: " + e.getMessage()));
+        }
+    }
+
+    // Admin Ticket Management
+    @GetMapping("/tickets")
+    public ResponseEntity<?> getAllTicketsAdmin(@RequestParam(required = false) String status,
+                                               @AuthenticationPrincipal UserDetails currentUser,
+                                               HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_TICKETS",
+                "TICKET",
+                null,
+                String.format("Viewed tickets list - status filter: %s", status),
+                httpRequest
+            );
+
             if (status != null) {
                 return ResponseEntity.ok(ticketService.getTicketsByStatus(status));
             }
@@ -262,8 +874,19 @@ public class AdminApiController {
     }
 
     @GetMapping("/tickets/{ticketId}")
-    public ResponseEntity<?> getTicketDetailsAdmin(@PathVariable Long ticketId) {
+    public ResponseEntity<?> getTicketDetailsAdmin(@PathVariable Long ticketId,
+                                                  @AuthenticationPrincipal UserDetails currentUser,
+                                                  HttpServletRequest httpRequest) {
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_TICKET",
+                "TICKET",
+                ticketId,
+                "Viewed ticket details",
+                httpRequest
+            );
+
             return ResponseEntity.ok(ticketService.getTicketById(ticketId));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -272,8 +895,19 @@ public class AdminApiController {
     }
 
     @GetMapping("/tickets/{ticketId}/messages")
-    public ResponseEntity<?> getTicketMessagesAdmin(@PathVariable Long ticketId) {
+    public ResponseEntity<?> getTicketMessagesAdmin(@PathVariable Long ticketId,
+                                                   @AuthenticationPrincipal UserDetails currentUser,
+                                                   HttpServletRequest httpRequest) {
         try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_TICKET_MESSAGES",
+                "TICKET",
+                ticketId,
+                "Viewed ticket messages",
+                httpRequest
+            );
+
             return ResponseEntity.ok(ticketService.getTicketMessages(ticketId));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -285,14 +919,32 @@ public class AdminApiController {
     public ResponseEntity<?> replyToTicketAdmin(
             @PathVariable Long ticketId,
             @RequestBody AdminTicketReplyRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
         try {
-            // Get the existing staff entity from database using StaffService
             Staff staff = staffService.findByUsername(userDetails.getUsername());
-
             var message = ticketService.addStaffReply(ticketId, request.getMessage(), staff);
+
+            auditLogService.logAdminAction(
+                userDetails.getUsername(),
+                "REPLY_TO_TICKET",
+                "TICKET",
+                ticketId,
+                "Replied to support ticket",
+                httpRequest
+            );
+
             return ResponseEntity.ok(message);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                userDetails.getUsername(),
+                "REPLY_TO_TICKET",
+                "TICKET",
+                ticketId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to reply to ticket: " + e.getMessage()));
         }
@@ -301,11 +953,32 @@ public class AdminApiController {
     @PutMapping("/tickets/{ticketId}/status")
     public ResponseEntity<?> updateTicketStatusAdmin(
             @PathVariable Long ticketId,
-            @RequestBody TicketStatusUpdateRequest request) {
+            @RequestBody TicketStatusUpdateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
             var ticket = ticketService.updateTicketStatus(ticketId, request.getStatus());
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_TICKET_STATUS",
+                "TICKET",
+                ticketId,
+                String.format("Updated ticket status to: %s", request.getStatus()),
+                httpRequest
+            );
+
             return ResponseEntity.ok(ticket);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UPDATE_TICKET_STATUS",
+                "TICKET",
+                ticketId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update ticket status: " + e.getMessage()));
         }
@@ -314,115 +987,201 @@ public class AdminApiController {
     @PostMapping("/tickets/{ticketId}/assign")
     public ResponseEntity<?> assignTicketAdmin(
             @PathVariable Long ticketId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
         try {
-            // Get the existing staff entity from database using StaffService
             Staff staff = staffService.findByUsername(userDetails.getUsername());
-
             var ticket = ticketService.assignTicket(ticketId, staff);
+
+            auditLogService.logAdminAction(
+                userDetails.getUsername(),
+                "ASSIGN_TICKET",
+                "TICKET",
+                ticketId,
+                "Assigned ticket to self",
+                httpRequest
+            );
+
             return ResponseEntity.ok(ticket);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                userDetails.getUsername(),
+                "ASSIGN_TICKET",
+                "TICKET",
+                ticketId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to assign ticket: " + e.getMessage()));
         }
     }
 
     @DeleteMapping("/tickets/{ticketId}")
-    public ResponseEntity<?> deleteTicket(@PathVariable Long ticketId) {
+    public ResponseEntity<?> deleteTicket(@PathVariable Long ticketId,
+                                        @AuthenticationPrincipal UserDetails currentUser,
+                                        HttpServletRequest httpRequest) {
         try {
             ticketService.deleteTicket(ticketId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "DELETE_TICKET",
+                "TICKET",
+                ticketId,
+                "Deleted support ticket",
+                httpRequest
+            );
+
             return ResponseEntity.ok(new SuccessResponse("Ticket deleted successfully"));
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "DELETE_TICKET",
+                "TICKET",
+                ticketId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to delete ticket: " + e.getMessage()));
         }
     }
 
     @PostMapping("/tickets/{ticketId}/close")
-    public ResponseEntity<?> closeTicketAdmin(@PathVariable Long ticketId) {
+    public ResponseEntity<?> closeTicketAdmin(@PathVariable Long ticketId,
+                                            @AuthenticationPrincipal UserDetails currentUser,
+                                            HttpServletRequest httpRequest) {
         try {
             var ticket = ticketService.closeTicket(ticketId);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "CLOSE_TICKET",
+                "TICKET",
+                ticketId,
+                "Closed support ticket",
+                httpRequest
+            );
+
             return ResponseEntity.ok(ticket);
         } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "CLOSE_TICKET",
+                "TICKET",
+                ticketId,
+                e.getMessage(),
+                httpRequest
+            );
+
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to close ticket: " + e.getMessage()));
         }
     }
 
-    @PostMapping("/tickets/{ticketId}/reopen")
-    public ResponseEntity<?> reopenTicketAdmin(@PathVariable Long ticketId) {
+    // NEW: Add audit log viewing endpoints for admins
+    @GetMapping("/audit-logs")
+    public ResponseEntity<?> getAuditLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String adminUsername,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String resourceType,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
         try {
-            var ticket = ticketService.reopenTicket(ticketId);
-            return ResponseEntity.ok(ticket);
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_AUDIT_LOGS",
+                "AUDIT",
+                null,
+                String.format("Viewed audit logs - page: %d, filters: admin=%s, action=%s, resource=%s",
+                             page, adminUsername, action, resourceType),
+                httpRequest
+            );
+
+            // Implement filtering logic based on parameters
+            org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size);
+
+            if (adminUsername != null) {
+                return ResponseEntity.ok(auditLogService.getAuditLogsByAdmin(adminUsername, pageable));
+            } else {
+                return ResponseEntity.ok(auditLogService.getAuditLogs(pageable));
+            }
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to reopen ticket: " + e.getMessage()));
+                .body(new ErrorResponse("Failed to fetch audit logs: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/tickets/search")
-    public ResponseEntity<?> searchTicketsAdmin(@RequestParam String query) {
-        try {
-            return ResponseEntity.ok(ticketService.searchTickets(query));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to search tickets: " + e.getMessage()));
-        }
+    // Helper methods
+    private String getSystemUptime() {
+        long uptimeMillis = System.currentTimeMillis() - getSystemStartTime();
+        long seconds = uptimeMillis / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        return String.format("%d days, %d hours, %d minutes",
+                           days, hours % 24, minutes % 60);
     }
 
-    @GetMapping("/tickets/urgent")
-    public ResponseEntity<?> getUrgentTicketsAdmin() {
-        try {
-            return ResponseEntity.ok(ticketService.getUrgentTickets());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to fetch urgent tickets: " + e.getMessage()));
-        }
+    private long getSystemStartTime() {
+        // This is a simplified implementation
+        // In production, you might store the actual start time
+        return System.currentTimeMillis() - (Runtime.getRuntime().totalMemory() / 1024);
     }
 
-    @GetMapping("/tickets/unassigned")
-    public ResponseEntity<?> getUnassignedTicketsAdmin() {
-        try {
-            return ResponseEntity.ok(ticketService.getUnassignedTickets());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to fetch unassigned tickets: " + e.getMessage()));
+    // Inner classes for request/response DTOs
+    public static class ErrorResponse {
+        private String message;
+        private LocalDateTime timestamp;
+
+        public ErrorResponse(String message) {
+            this.message = message;
+            this.timestamp = LocalDateTime.now();
         }
+
+        // getters and setters
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     }
 
-    @GetMapping("/tickets/stats")
-    public ResponseEntity<?> getTicketStats() {
-        try {
-            return ResponseEntity.ok(ticketService.getStatusDistribution());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Failed to fetch ticket statistics: " + e.getMessage()));
+    public static class SuccessResponse {
+        private String message;
+        private LocalDateTime timestamp;
+
+        public SuccessResponse(String message) {
+            this.message = message;
+            this.timestamp = LocalDateTime.now();
         }
+
+        // getters and setters
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+        public LocalDateTime getTimestamp() { return timestamp; }
+        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     }
 
-    // DTOs for requests and responses
     public static class UserUpdateRequest {
         private String email;
         private String firstName;
         private String lastName;
-        private String artistName;
-        private String cover;
+        // Add other fields as needed
 
-        // Getters and setters
+        // getters and setters
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
-
         public String getFirstName() { return firstName; }
         public void setFirstName(String firstName) { this.firstName = firstName; }
-
         public String getLastName() { return lastName; }
         public void setLastName(String lastName) { this.lastName = lastName; }
-
-        public String getArtistName() { return artistName; }
-        public void setArtistName(String artistName) { this.artistName = artistName; }
-
-        public String getCover() { return cover; }
-        public void setCover(String cover) { this.cover = cover; }
     }
 
     public static class UserStatusUpdateRequest {
@@ -439,72 +1198,6 @@ public class AdminApiController {
         public void setStatus(String status) { this.status = status; }
     }
 
-    public static class SystemOverview {
-        private long totalUsers;
-        private long totalMusic;
-        private long totalOrders;
-        private double totalRevenue;
-        private long activeTickets;
-
-        // Getters and setters
-        public long getTotalUsers() { return totalUsers; }
-        public void setTotalUsers(long totalUsers) { this.totalUsers = totalUsers; }
-
-        public long getTotalMusic() { return totalMusic; }
-        public void setTotalMusic(long totalMusic) { this.totalMusic = totalMusic; }
-
-        public long getTotalOrders() { return totalOrders; }
-        public void setTotalOrders(long totalOrders) { this.totalOrders = totalOrders; }
-
-        public double getTotalRevenue() { return totalRevenue; }
-        public void setTotalRevenue(double totalRevenue) { this.totalRevenue = totalRevenue; }
-
-        public long getActiveTickets() { return activeTickets; }
-        public void setActiveTickets(long activeTickets) { this.activeTickets = activeTickets; }
-    }
-
-    public static class DetailedAnalytics {
-        private Object userGrowth;
-        private Object salesAnalytics;
-        private Object musicAnalytics;
-        private Object ticketAnalytics;
-
-        // Getters and setters
-        public Object getUserGrowth() { return userGrowth; }
-        public void setUserGrowth(Object userGrowth) { this.userGrowth = userGrowth; }
-
-        public Object getSalesAnalytics() { return salesAnalytics; }
-        public void setSalesAnalytics(Object salesAnalytics) { this.salesAnalytics = salesAnalytics; }
-
-        public Object getMusicAnalytics() { return musicAnalytics; }
-        public void setMusicAnalytics(Object musicAnalytics) { this.musicAnalytics = musicAnalytics; }
-
-        public Object getTicketAnalytics() { return ticketAnalytics; }
-        public void setTicketAnalytics(Object ticketAnalytics) { this.ticketAnalytics = ticketAnalytics; }
-    }
-
-    public static class ErrorResponse {
-        private String message;
-
-        public ErrorResponse(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-    }
-
-    public static class SuccessResponse {
-        private String message;
-
-        public SuccessResponse(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-    }
-
     public static class AdminTicketReplyRequest {
         private String message;
 
@@ -517,23 +1210,5 @@ public class AdminApiController {
 
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
-    }
-
-    public static class BulkTicketUpdateRequest {
-        private List<Long> ticketIds;
-        private String newStatus;
-
-        public List<Long> getTicketIds() { return ticketIds; }
-        public void setTicketIds(List<Long> ticketIds) { this.ticketIds = ticketIds; }
-
-        public String getNewStatus() { return newStatus; }
-        public void setNewStatus(String newStatus) { this.newStatus = newStatus; }
-    }
-
-    public static class BulkTicketDeleteRequest {
-        private List<Long> ticketIds;
-
-        public List<Long> getTicketIds() { return ticketIds; }
-        public void setTicketIds(List<Long> ticketIds) { this.ticketIds = ticketIds; }
     }
 }

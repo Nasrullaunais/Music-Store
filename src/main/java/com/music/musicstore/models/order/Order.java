@@ -2,6 +2,7 @@ package com.music.musicstore.models.order;
 
 import com.music.musicstore.models.cart.Cart;
 import com.music.musicstore.models.users.Customer;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -11,14 +12,16 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
+    @JsonIgnoreProperties({"orders", "cart", "tickets", "reviews"})
     private Customer customer;
 
     @Column(name = "order_date", nullable = false)
@@ -34,7 +37,7 @@ public class Order {
     @Column(name = "payment_method")
     private String paymentMethod;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> orderItems = new ArrayList<>();
 
     public enum OrderStatus {
