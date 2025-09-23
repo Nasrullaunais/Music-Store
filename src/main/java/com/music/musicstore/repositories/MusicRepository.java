@@ -49,35 +49,31 @@ public interface MusicRepository extends JpaRepository<Music, Long> {
     // Find by genre with pagination
     Page<Music> findByGenre(String genre, Pageable pageable);
 
+    // Missing methods for AdminApiController functionality
+
     // Count methods for analytics
     long countByArtistUsername(String artistUsername);
 
-    @Query("SELECT COUNT(m) FROM Music m WHERE m.genre = ?1")
-    long countByGenre(String genre);
+    // Flagged music methods
+    Page<Music> findByIsFlaggedTrue(Pageable pageable);
+    long countByIsFlaggedTrue();
 
-    @Query("SELECT m.genre, COUNT(m) FROM Music m GROUP BY m.genre")
-    List<Object[]> countByGenreGroupBy();
-
+    // Analytics methods
     @Query("SELECT AVG(m.averageRating) FROM Music m WHERE m.averageRating IS NOT NULL")
     Double getAverageRating();
 
-    // NEW: Flagged content methods
-    Page<Music> findByIsFlaggedTrue(Pageable pageable);
+    @Query("SELECT m.genre, COUNT(m) FROM Music m WHERE m.genre IS NOT NULL GROUP BY m.genre")
+    List<Object[]> countByGenreGroupBy();
 
-    long countByIsFlaggedTrue();
+    @Query("SELECT m.category, COUNT(m) FROM Music m WHERE m.category IS NOT NULL GROUP BY m.category")
+    List<Object[]> countByCategoryGroupBy();
 
-    @Query("SELECT AVG(m.averageRating) FROM Music m WHERE m.averageRating IS NOT NULL")
-    BigDecimal getAverageRatingAcrossAll();
+    // Top-rated music for "top selling" placeholder
+    Page<Music> findAllByOrderByAverageRatingDesc(Pageable pageable);
 
-    @Query("SELECT m FROM Music m WHERE m.averageRating IS NOT NULL ORDER BY m.averageRating DESC")
-    List<Music> findTopRatedMusic(Pageable pageable);
-
-    @Query("SELECT new map(m.genre as genre, COUNT(m) as count) FROM Music m GROUP BY m.genre")
-    Map<String, Long> countByGenreGrouped();
-
-    @Query("SELECT new map(m.category as category, COUNT(m) as count) FROM Music m GROUP BY m.category")
-    Map<String, Long> countByCategoryGrouped();
-
-    @Query("SELECT new map(m.artistUsername as artist, COUNT(m) as totalTracks, AVG(m.averageRating) as avgRating, SUM(m.totalReviews) as totalReviews) FROM Music m GROUP BY m.artistUsername")
-    List<Map<String, Object>> getArtistPerformanceStats();
+    // Artist performance analytics
+    @Query("SELECT m.artistUsername, COUNT(m), AVG(m.averageRating), SUM(m.totalReviews) " +
+           "FROM Music m WHERE m.artistUsername IS NOT NULL " +
+           "GROUP BY m.artistUsername")
+    List<Object[]> getArtistPerformanceStats();
 }

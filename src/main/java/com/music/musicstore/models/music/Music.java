@@ -99,156 +99,62 @@ public class Music {
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getAudioFilePath() {
-        return audioFilePath;
-    }
-    public void setAudioFilePath(String audioFilePath) {
-        this.audioFilePath = audioFilePath;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getOriginalFileName() {
-        return OriginalFileName;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setOriginalFileName(String originalFileName) {
-        OriginalFileName = originalFileName;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public String getName() {
-        return name;
-    }
+    public String getAudioFilePath() { return audioFilePath; }
+    public void setAudioFilePath(String audioFilePath) { this.audioFilePath = audioFilePath; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getOriginalFileName() { return OriginalFileName; }
+    public void setOriginalFileName(String originalFileName) { this.OriginalFileName = originalFileName; }
 
-    public String getDescription() {
-        return description;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
+    public String getArtistUsername() { return artistUsername; }
+    public void setArtistUsername(String artistUsername) { this.artistUsername = artistUsername; }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
+    public String getAlbumName() { return albumName; }
+    public void setAlbumName(String albumName) { this.albumName = albumName; }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+    public String getGenre() { return genre; }
+    public void setGenre(String genre) { this.genre = genre; }
 
-    public String getCategory() {
-        return category;
-    }
+    public Integer getReleaseYear() { return releaseYear; }
+    public void setReleaseYear(Integer releaseYear) { this.releaseYear = releaseYear; }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
+    public BigDecimal getAverageRating() { return averageRating; }
+    public void setAverageRating(BigDecimal averageRating) { this.averageRating = averageRating; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public Integer getTotalReviews() { return totalReviews; }
+    public void setTotalReviews(Integer totalReviews) { this.totalReviews = totalReviews; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Boolean getIsFlagged() { return isFlagged; }
+    public void setFlagged(Boolean flagged) { this.isFlagged = flagged; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    public LocalDateTime getFlaggedAt() { return flaggedAt; }
+    public void setFlaggedAt(LocalDateTime flaggedAt) { this.flaggedAt = flaggedAt; }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public String getArtistUsername() {
-        return artistUsername;
-    }
-
-    public void setArtistUsername(String artistUsername) {
-        this.artistUsername = artistUsername;
-    }
-
-    public String getAlbumName() {
-        return albumName;
-    }
-
-    public void setAlbumName(String albumName) {
-        this.albumName = albumName;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
-    }
-
-    public Integer getReleaseYear() {
-        return releaseYear;
-    }
-
-    public void setReleaseYear(Integer releaseYear) {
-        this.releaseYear = releaseYear;
-    }
-
-    public BigDecimal getAverageRating() {
-        return averageRating;
-    }
-
-    public void setAverageRating(BigDecimal averageRating) {
-        this.averageRating = averageRating;
-    }
-
-    public Integer getTotalReviews() {
-        return totalReviews;
-    }
-
-    public void setTotalReviews(Integer totalReviews) {
-        this.totalReviews = totalReviews;
-    }
-
-    public Boolean getFlagged() {
-        return isFlagged;
-    }
-
-    public void setFlagged(Boolean flagged) {
-        isFlagged = flagged;
-    }
-
-    public LocalDateTime getFlaggedAt() {
-        return flaggedAt;
-    }
-
-    public void setFlaggedAt(LocalDateTime flaggedAt) {
-        this.flaggedAt = flaggedAt;
-    }
-
-    public Long getFlaggedByCustomerId() {
-        return flaggedByCustomerId;
-    }
-
-    public void setFlaggedByCustomerId(Long flaggedByCustomerId) {
-        this.flaggedByCustomerId = flaggedByCustomerId;
-    }
+    public Long getFlaggedByCustomerId() { return flaggedByCustomerId; }
+    public void setFlaggedByCustomerId(Long flaggedByCustomerId) { this.flaggedByCustomerId = flaggedByCustomerId; }
 
     @PrePersist
     protected void onCreate() {
@@ -261,7 +167,14 @@ public class Music {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public CharSequence getFilePath() {
-        return audioFilePath;
+    @Override
+    public String toString() {
+        return "Music{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", artistUsername='" + artistUsername + '\'' +
+                ", genre='" + genre + '\'' +
+                ", price=" + price +
+                '}';
     }
 }
