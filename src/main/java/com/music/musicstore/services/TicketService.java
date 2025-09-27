@@ -18,16 +18,15 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final TicketMessageRepository ticketMessageRepository;
     private final CustomerService customerService;
-
     @Autowired
     public TicketService(TicketRepository ticketRepository,
-                        TicketMessageRepository ticketMessageRepository,
-                        CustomerService customerService) {
-        this.ticketRepository = ticketRepository;
+                                 TicketMessageRepository ticketMessageRepository,
+                                     CustomerService customerService) {
         this.ticketMessageRepository = ticketMessageRepository;
         this.customerService = customerService;
-    }
 
+                this.ticketRepository = ticketRepository;
+    }
     // Create ticket with Customer object
     public Ticket createTicket(Customer customer, String subject, String initialMessage) {
         Ticket ticket = new Ticket(subject, customer, initialMessage);
@@ -208,6 +207,7 @@ public class TicketService {
         }
         throw new RuntimeException("Ticket not found with ID: " + ticketId);
     }
+
 
     // Close ticket
     public Ticket closeTicket(Long ticketId) {
