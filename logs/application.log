@@ -1,0 +1,57 @@
+2025-09-27T10:23:55.173+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.MusicStoreApplication     : Starting MusicStoreApplication using Java 24.0.2 with PID 9881 (/home/nasrulla/All Files/Projects/Music Store/Music Store/target/classes started by nasrulla in /home/nasrulla/All Files/Projects/Music Store/Music Store)
+2025-09-27T10:23:55.176+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.MusicStoreApplication     : No active profile set, falling back to 1 default profile: "default"
+2025-09-27T10:23:55.221+05:30  INFO 9881 --- [Music Store] [restartedMain] .s.b.d.c.l.DockerComposeLifecycleManager : Using Docker Compose file /home/nasrulla/All Files/Projects/Music Store/Music Store/compose.yaml
+2025-09-27T10:23:55.807+05:30  INFO 9881 --- [Music Store] [restartedMain] .s.b.d.c.l.DockerComposeLifecycleManager : There are already Docker Compose services running, skipping startup
+2025-09-27T10:23:55.818+05:30  INFO 9881 --- [Music Store] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-09-27T10:23:55.818+05:30  INFO 9881 --- [Music Store] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-09-27T10:23:56.479+05:30  INFO 9881 --- [Music Store] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-09-27T10:23:56.561+05:30  INFO 9881 --- [Music Store] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 71 ms. Found 14 JPA repository interfaces.
+2025-09-27T10:23:57.142+05:30  INFO 9881 --- [Music Store] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8082 (http)
+2025-09-27T10:23:57.154+05:30  INFO 9881 --- [Music Store] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-27T10:23:57.154+05:30  INFO 9881 --- [Music Store] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.44]
+2025-09-27T10:23:57.180+05:30  INFO 9881 --- [Music Store] [restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-27T10:23:57.180+05:30  INFO 9881 --- [Music Store] [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1361 ms
+2025-09-27T10:23:57.315+05:30  INFO 9881 --- [Music Store] [restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-09-27T10:23:57.382+05:30  INFO 9881 --- [Music Store] [restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.26.Final
+2025-09-27T10:23:57.412+05:30  INFO 9881 --- [Music Store] [restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-09-27T10:23:57.647+05:30  INFO 9881 --- [Music Store] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-09-27T10:23:57.673+05:30  INFO 9881 --- [Music Store] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-09-27T10:23:57.845+05:30  INFO 9881 --- [Music Store] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3f880727
+2025-09-27T10:23:57.847+05:30  INFO 9881 --- [Music Store] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-09-27T10:23:57.896+05:30  WARN 9881 --- [Music Store] [restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-09-27T10:23:57.915+05:30  INFO 9881 --- [Music Store] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.6
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-09-27T10:23:59.027+05:30  INFO 9881 --- [Music Store] [restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-09-27T10:23:59.961+05:30  INFO 9881 --- [Music Store] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-27T10:24:00.212+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.AdminService     : AdminService initialized successfully
+2025-09-27T10:24:00.250+05:30  INFO 9881 --- [Music Store] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-09-27T10:24:00.789+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.CustomerService  : CustomerService initialized successfully
+2025-09-27T10:24:00.835+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.ArtistService    : ArtistService initialized successfully
+2025-09-27T10:24:00.854+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.StaffService     : StaffService initialized successfully
+2025-09-27T10:24:00.924+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.m.services.UnifiedUserService        : UnifiedUserService initialized successfully
+2025-09-27T10:24:01.284+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.MusicService     : MusicService initialized successfully
+2025-09-27T10:24:01.442+05:30  INFO 9881 --- [Music Store] [restartedMain] c.music.musicstore.services.CartService  : CartService initialized successfully
+2025-09-27T10:24:02.557+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.ReviewService    : ReviewService initialized successfully
+2025-09-27T10:24:02.691+05:30  INFO 9881 --- [Music Store] [restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name combinedUserDetailsService
+2025-09-27T10:24:03.107+05:30 DEBUG 9881 --- [Music Store] [restartedMain] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, JwtAuthenticationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-09-27T10:24:03.244+05:30  WARN 9881 --- [Music Store] [restartedMain] ion$DefaultTemplateResolverConfiguration : Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2025-09-27T10:24:03.438+05:30  INFO 9881 --- [Music Store] [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-09-27T10:24:03.478+05:30  INFO 9881 --- [Music Store] [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8082 (http) with context path '/'
+2025-09-27T10:24:03.486+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.MusicStoreApplication     : Started MusicStoreApplication in 8.701 seconds (process running for 9.318)
+2025-09-27T10:24:03.641+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.m.configs.AdminDataInitializer       : Initializing admin data...
+2025-09-27T10:24:03.663+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.AdminService     : Total admin count: 4
+2025-09-27T10:24:03.663+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.m.configs.AdminDataInitializer       : Admin data already exists. Skipping initialization.
+2025-09-27T10:24:03.770+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.m.configs.StaffDataInitializer       : Initializing staff data...
+2025-09-27T10:24:03.775+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.musicstore.services.StaffService     : Total staff count: 4
+2025-09-27T10:24:03.775+05:30  INFO 9881 --- [Music Store] [restartedMain] c.m.m.configs.StaffDataInitializer       : Staff data already exists. Skipping initialization.
+2025-09-27T10:24:06.376+05:30  INFO 9881 --- [Music Store] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2025-09-27T10:24:06.380+05:30  INFO 9881 --- [Music Store] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2025-09-27T10:24:06.391+05:30  INFO 9881 --- [Music Store] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-09-27T10:24:06.396+05:30  INFO 9881 --- [Music Store] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-09-27T10:24:06.399+05:30  INFO 9881 --- [Music Store] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
