@@ -1,0 +1,16 @@
+services:
+  pg-music-store:
+    image: postgres:alpine
+    container_name: pg-music-store
+    restart: always
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_PASSWORD: "leo12345"
+      POSTGRES_USER: music_store_user
+      POSTGRES_DB: music_store_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
