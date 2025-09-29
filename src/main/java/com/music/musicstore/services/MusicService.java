@@ -26,16 +26,19 @@ import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.io.IOException;
 
 @Service
 public class MusicService {
     private static final Logger logger = LoggerFactory.getLogger(MusicService.class);
 
     private final MusicRepository musicRepository;
+    private final FileStorageService fileStorageService;
 
     @Autowired
-    public MusicService(MusicRepository musicRepository) {
+    public MusicService(MusicRepository musicRepository, FileStorageService fileStorageService) {
         this.musicRepository = musicRepository;
+        this.fileStorageService = fileStorageService;
         logger.info("MusicService initialized successfully");
     }
 
@@ -72,10 +75,42 @@ public class MusicService {
 
         try {
             // Check if music exists before deletion
-            Optional<Music> music = musicRepository.findById(id);
-            if (music.isEmpty()) {
+            Optional<Music> musicOpt = musicRepository.findById(id);
+            if (musicOpt.isEmpty()) {
                 logger.error("Music not found for deletion with ID: {}", id);
                 throw new ResourceNotFoundException("Music", id.toString());
+            }
+
+            Music music = musicOpt.get();
+
+            // Attempt to delete associated files from storage (safe cleanup)
+            try {
+                String audioPath = music.getAudioFilePath();
+                String imagePath = music.getImageUrl();
+
+                String audioFilename = extractStoredFilename(audioPath);
+                String imageFilename = extractStoredFilename(imagePath);
+
+                if (audioFilename != null && !audioFilename.isEmpty()) {
+                    boolean deleted = fileStorageService.deleteFile(audioFilename);
+                    if (deleted) {
+                        logger.info("Deleted audio file '{}' for music ID: {}", audioFilename, id);
+                    } else {
+                        logger.warn("Audio file '{}' not deleted or not found for music ID: {}", audioFilename, id);
+                    }
+                }
+
+                if (imageFilename != null && !imageFilename.isEmpty()) {
+                    boolean deleted = fileStorageService.deleteFile(imageFilename);
+                    if (deleted) {
+                        logger.info("Deleted image file '{}' for music ID: {}", imageFilename, id);
+                    } else {
+                        logger.warn("Image file '{}' not deleted or not found for music ID: {}", imageFilename, id);
+                    }
+                }
+            } catch (Exception fileEx) {
+                logger.warn("Failed to delete stored files for music ID: {}: {}", id, fileEx.getMessage());
+                // proceed to delete DB record even if files couldn't be deleted
             }
 
             musicRepository.deleteById(id);
@@ -83,6 +118,22 @@ public class MusicService {
         } catch (Exception e) {
             logger.error("Error deleting music with ID: {}", id, e);
             throw new RuntimeException("Failed to delete music", e);
+        }
+    }
+
+    // Helper to get stored filename from a stored path or URL like '/uploads/music/<filename>' or just '<filename>'
+    private String extractStoredFilename(String path) {
+        if (path == null || path.trim().isEmpty()) return null;
+        try {
+            // Normalize separators and take last segment
+            String normalized = path.replace('\\', '/');
+            int idx = normalized.lastIndexOf('/');
+            if (idx >= 0 && idx < normalized.length() - 1) {
+                return normalized.substring(idx + 1);
+            }
+            return normalized;
+        } catch (Exception e) {
+            return path;
         }
     }
 
@@ -524,24 +575,50 @@ public class MusicService {
             music.setDescription(description != null ? description : "");
             music.setPrice(BigDecimal.valueOf(price));
             music.setGenre(genre);
-            music.setCategory("Music"); // Default category
+            music.setCategory(genre); // Default category
             music.setArtistUsername(username);
             music.setCreatedAt(LocalDateTime.now());
             music.setUpdatedAt(LocalDateTime.now());
 
-            // Handle file uploads (placeholder - would need actual file storage service)
-            String audioFileName = System.currentTimeMillis() + "_" + musicFile.getOriginalFilename();
-            String imageFileName = System.currentTimeMillis() + "_" + coverImage.getOriginalFilename();
+            // Store files using FileStorageService which writes to configured upload directory
+            String audioStoredFilename;
+            String imageStoredFilename;
+            try {
+                audioStoredFilename = fileStorageService.storeFile(musicFile);
+                imageStoredFilename = fileStorageService.storeFile(coverImage);
+            } catch (IOException ioEx) {
+                logger.error("Failed to store uploaded files for music: {} by artist: {}", title, username, ioEx);
+                throw new RuntimeException("Failed to store uploaded files: " + ioEx.getMessage(), ioEx);
+            }
 
-            // In a real implementation, you would save files to disk/cloud and get URLs
-            music.setAudioFilePath("/uploads/music/" + audioFileName);
-            music.setImageUrl("/uploads/covers/" + imageFileName);
+            // Set paths/URLs on entity. Keep the same relative path convention used elsewhere.
+            music.setAudioFilePath("/uploads/music/" + audioStoredFilename);
+            music.setImageUrl("/uploads/music/" + imageStoredFilename);
             music.setOriginalFileName(musicFile.getOriginalFilename());
 
-            Music savedMusic = saveMusic(music);
+            Music savedMusic;
+            try {
+                savedMusic = saveMusic(music);
+            } catch (Exception saveEx) {
+                // Attempt to clean up stored files to avoid orphan files
+                try {
+                    fileStorageService.deleteFile(audioStoredFilename);
+                } catch (Exception delEx) {
+                    logger.warn("Failed to delete audio file after save failure: {}", audioStoredFilename, delEx);
+                }
+                try {
+                    fileStorageService.deleteFile(imageStoredFilename);
+                } catch (Exception delEx) {
+                    logger.warn("Failed to delete image file after save failure: {}", imageStoredFilename, delEx);
+                }
+                throw saveEx;
+            }
+
             logger.info("Successfully uploaded music: {} (ID: {}) by artist: {}", title, savedMusic.getId(), username);
             return savedMusic;
 
+        } catch (ValidationException ve) {
+            throw ve; // rethrow validation to be handled by controller
         } catch (Exception e) {
             logger.error("Error uploading music: {} by artist: {}", title, username, e);
             throw new RuntimeException("Failed to upload music: " + e.getMessage(), e);
@@ -762,7 +839,8 @@ public class MusicService {
                 throw new ValidationException("Music is not flagged and cannot be deleted as flagged content");
             }
 
-            musicRepository.deleteById(musicId);
+            // Use centralized deletion which also handles file cleanup
+            deleteMusic(musicId);
             logger.info("Successfully deleted flagged music ID: {}", musicId);
         } catch (Exception e) {
             logger.error("Error deleting flagged music ID: {}", musicId, e);

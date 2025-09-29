@@ -1,14 +1,18 @@
 package com.music.musicstore.exceptions;
 
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,10 +74,28 @@ public class GlobalExceptionHandler {
         return createErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT");
     }
 
+    @ExceptionHandler(ClientAbortException.class)
+    public void handleClientAbort(ClientAbortException ex, WebRequest request, HttpServletResponse response) {
+        logger.info("Client aborted connection: {}", ex.getMessage());
+        // Do not write any response body
+        response.setStatus(HttpServletResponse.SC_OK);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(
-            Exception ex, WebRequest request) {
+            Exception ex, WebRequest request, HttpServletResponse response) {
         logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
+        // Avoid writing JSON if Content-Type is not JSON
+        String contentType = response.getContentType();
+        if (contentType != null && !contentType.contains(MediaType.APPLICATION_JSON_VALUE)) {
+            try {
+                response.resetBuffer();
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.getWriter().write("");
+                response.flushBuffer();
+            } catch (IOException ignored) {}
+            return null;
+        }
         return createErrorResponse("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR");
     }
 

@@ -5,6 +5,7 @@ import com.music.musicstore.models.music.Music;
 import com.music.musicstore.models.users.Customer;
 import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.CustomerService;
+import com.music.musicstore.services.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -16,8 +17,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +39,9 @@ public class MusicApiController {
 
     @Autowired
     private CustomerService customerService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Autowired
     public MusicApiController(MusicService musicService) {
@@ -121,20 +123,8 @@ public class MusicApiController {
                 return ResponseEntity.badRequest().build();
             }
 
-            // Create upload directory if it doesn't exist
-            String uploadDir = "src/main/resources/static/uploads/music/";
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String uniqueFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-            Path filePath = uploadPath.resolve(uniqueFilename);
-
-            // Save file to disk
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            // Use FileStorageService to store the file
+            String uniqueFilename = fileStorageService.storeFile(file);
 
             // Create a new Music entity
             Music music = new Music();
@@ -146,13 +136,11 @@ public class MusicApiController {
             music.setArtistUsername(artist);
             music.setAlbumName(albumName);
             music.setReleaseYear(Integer.parseInt(releaseYear));
-            music.setAudioFilePath("/uploads/music/" + uniqueFilename);
-            music.setOriginalFileName(originalFilename);
+            music.setAudioFilePath("/uploads/music/" + uniqueFilename); // For static access
+            music.setOriginalFileName(file.getOriginalFilename());
 
             // Save the music and return it
             return ResponseEntity.ok(convertToDto(musicService.saveMusic(music)));
-        } catch (IOException e) {
-            return ResponseEntity.status(500).build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }

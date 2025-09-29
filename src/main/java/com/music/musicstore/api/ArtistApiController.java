@@ -50,21 +50,7 @@ public class ArtistApiController {
         logger.info("Music upload request from artist: {}", userDetails.getUsername());
 
         try {
-            // Additional validation
-            if (title == null || title.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(new ApiResponse(false, "Title is required", null));
-            }
 
-            if (musicFile == null || musicFile.isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(new ApiResponse(false, "Music file is required", null));
-            }
-
-            if (coverImage == null || coverImage.isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(new ApiResponse(false, "Cover image is required", null));
-            }
 
             // Validate file types
             String musicContentType = musicFile.getContentType();
