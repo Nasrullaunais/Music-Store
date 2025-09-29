@@ -584,8 +584,9 @@ public class MusicService {
             String audioStoredFilename;
             String imageStoredFilename;
             try {
-                audioStoredFilename = fileStorageService.storeFile(musicFile);
-                imageStoredFilename = fileStorageService.storeFile(coverImage);
+                // Store audio in 'music' subfolder and covers in 'covers' subfolder
+                audioStoredFilename = fileStorageService.storeFile(musicFile, "music");
+                imageStoredFilename = fileStorageService.storeFile(coverImage, "covers");
             } catch (IOException ioEx) {
                 logger.error("Failed to store uploaded files for music: {} by artist: {}", title, username, ioEx);
                 throw new RuntimeException("Failed to store uploaded files: " + ioEx.getMessage(), ioEx);
@@ -593,7 +594,8 @@ public class MusicService {
 
             // Set paths/URLs on entity. Keep the same relative path convention used elsewhere.
             music.setAudioFilePath("/uploads/music/" + audioStoredFilename);
-            music.setImageUrl("/uploads/music/" + imageStoredFilename);
+            // Save cover under uploads/covers/
+            music.setImageUrl("/uploads/covers/" + imageStoredFilename);
             music.setOriginalFileName(musicFile.getOriginalFilename());
 
             Music savedMusic;
@@ -957,15 +959,22 @@ public class MusicService {
 
             for (Object[] stat : artistStats) {
                 String artistUsername = (String) stat[0];
-                Long trackCount = (Long) stat[1];
-                Double avgRating = (Double) stat[2];
-                Integer totalReviews = (Integer) stat[3];
+
+                // Use Number to safely handle numeric types returned by JPA/SQL (Long, Integer, BigDecimal, etc.)
+                Number trackCountNum = (Number) stat[1];
+                long trackCount = trackCountNum != null ? trackCountNum.longValue() : 0L;
+
+                Number avgRatingNum = (Number) stat[2];
+                Double avgRating = avgRatingNum != null ? avgRatingNum.doubleValue() : null;
+
+                Number totalReviewsNum = (Number) stat[3];
+                long totalReviews = totalReviewsNum != null ? totalReviewsNum.longValue() : 0L;
 
                 Map<String, Object> artistData = new HashMap<>();
                 artistData.put("artistUsername", artistUsername);
                 artistData.put("totalTracks", trackCount);
                 artistData.put("averageRating", avgRating != null ? avgRating : 0.0);
-                artistData.put("totalReviews", totalReviews != null ? totalReviews : 0);
+                artistData.put("totalReviews", totalReviews);
                 artistData.put("totalSales", 0); // Placeholder - would need actual sales data
                 artistData.put("totalRevenue", 0.0); // Placeholder - would need actual sales data
 

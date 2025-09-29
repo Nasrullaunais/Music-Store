@@ -504,19 +504,14 @@ public class ReviewService {
 
         Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
         if (sortBy != null) {
-            switch (sortBy.toLowerCase()) {
-                case "rating":
-                    pageable = org.springframework.data.domain.PageRequest.of(page, size,
+            pageable = switch (sortBy.toLowerCase()) {
+                case "rating" -> org.springframework.data.domain.PageRequest.of(page, size,
                         org.springframework.data.domain.Sort.by("rating").descending());
-                    break;
-                case "date":
-                    pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                case "date" -> org.springframework.data.domain.PageRequest.of(page, size,
                         org.springframework.data.domain.Sort.by("createdAt").descending());
-                    break;
-                default:
-                    pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                default -> org.springframework.data.domain.PageRequest.of(page, size,
                         org.springframework.data.domain.Sort.by("createdAt").descending());
-            }
+            };
         }
 
         return reviewRepository.findAll(pageable);
