@@ -11,8 +11,13 @@ import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.ReviewService;
 import com.music.musicstore.services.TicketService;
 import com.music.musicstore.repositories.CustomerRepository;
+import com.music.musicstore.dto.TicketMessageDto;
+import com.music.musicstore.dto.TicketMessageMapper;
+import com.music.musicstore.dto.TicketDto;
+import com.music.musicstore.dto.TicketMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 import java.util.Map;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +66,12 @@ public class CustomerApiController {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private TicketMessageMapper ticketMessageMapper;
+
+    @Autowired
+    private TicketMapper ticketMapper;
 
     @GetMapping("/purchased")
     public ResponseEntity<Set<Music>> getPurchasedMusic(@AuthenticationPrincipal Customer customer) {
@@ -172,7 +184,8 @@ public class CustomerApiController {
             String subject = payload.get("subject");
             String description = payload.get("description");
             Ticket ticket = ticketService.createTicket(customer, subject, description);
-            return ResponseEntity.ok(ticket);
+            TicketDto dto = ticketMapper.toDto(ticket);
+            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to create ticket: " + e.getMessage()));
@@ -182,7 +195,9 @@ public class CustomerApiController {
     @GetMapping("/support/tickets")
     public ResponseEntity<?> getTickets(@AuthenticationPrincipal Customer customer) {
         try {
-            return ResponseEntity.ok(ticketService.getTicketsByUsername(customer.getUsername()));
+            var tickets = ticketService.getTicketsByUsername(customer.getUsername());
+            List<TicketDto> dtoList = ticketMapper.toDtoList(tickets);
+            return ResponseEntity.ok(dtoList);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch tickets: " + e.getMessage()));
@@ -197,7 +212,8 @@ public class CustomerApiController {
         try {
             String content = payload.get("content");
             var message = ticketService.addCustomerMessage(ticketId, content, customer);
-            return ResponseEntity.ok(message);
+            TicketMessageDto dto = ticketMessageMapper.toDto(message);
+            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to add message: " + e.getMessage()));
@@ -211,9 +227,11 @@ public class CustomerApiController {
             // Verify customer owns this ticket
             var ticket = ticketService.getTicketById(ticketId);
             if (ticket.isPresent() && ticket.get().getCustomer().getId().equals(customer.getId())) {
-                return ResponseEntity.ok(ticketService.getTicketMessages(ticketId));
+                var messages = ticketService.getTicketMessages(ticketId);
+                List<TicketMessageDto> dtos = messages.stream().map(ticketMessageMapper::toDto).toList();
+                return ResponseEntity.ok(dtos);
             } else {
-                return ResponseEntity.badRequest()
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ErrorResponse("Ticket not found or access denied"));
             }
         } catch (Exception e) {
