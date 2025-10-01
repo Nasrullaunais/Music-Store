@@ -25,7 +25,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -1015,6 +1014,45 @@ public class AdminApiController {
 
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to assign ticket: " + e.getMessage()));
+        }
+    }
+
+    // NEW: Admin can assign any staff member to a ticket by staffId
+    @PutMapping("/tickets/{ticketId}/assign/{staffId}")
+    public ResponseEntity<?> assignTicketToStaffAdmin(
+            @PathVariable Long ticketId,
+            @PathVariable Long staffId,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            // Find the staff by ID (will throw if not found)
+            Staff staff = staffService.findById(staffId);
+
+            // Assign the ticket to the specified staff member
+            var ticket = ticketService.assignTicket(ticketId, staff);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "ASSIGN_TICKET_TO_STAFF",
+                "TICKET",
+                ticketId,
+                String.format("Assigned ticket to staff id=%d (username=%s)", staffId, staff.getUsername()),
+                httpRequest
+            );
+
+            return ResponseEntity.ok(ticket);
+        } catch (Exception e) {
+            auditLogService.logFailedAdminAction(
+                currentUser != null ? currentUser.getUsername() : "unknown",
+                "ASSIGN_TICKET_TO_STAFF",
+                "TICKET",
+                ticketId,
+                e.getMessage(),
+                httpRequest
+            );
+
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to assign ticket to staff: " + e.getMessage()));
         }
     }
 
