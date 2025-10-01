@@ -48,6 +48,9 @@ public class Staff implements UserDetails {
     @Column(name = "created_at", nullable = true)
     private LocalDateTime createdAt;
 
+    @Column(nullable = true)
+    private String position;
+
     // Default constructor required by JPA
     public Staff() {}
 
@@ -94,6 +97,14 @@ public class Staff implements UserDetails {
         this.createdAt = createdAt;
     }
 
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -108,6 +119,11 @@ public class Staff implements UserDetails {
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     @Override
     public String toString() {

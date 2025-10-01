@@ -202,7 +202,7 @@ public class StaffService {
         }
     }
 
-    public void updateStaff(Staff staff) {
+    public Staff updateStaff(Staff staff) {
         logger.debug("Updating staff: {}", staff != null ? staff.getUsername() : "null");
 
         if (staff == null) {
@@ -211,48 +211,63 @@ public class StaffService {
         }
 
         if (staff.getId() == null) {
-            logger.error("Staff ID is null for update");
+            logger.error("Staff ID is null");
             throw new ValidationException("Staff ID cannot be null for update");
         }
 
         try {
-            Staff existingStaff = staffRepository.findById(staff.getId())
-                    .orElseThrow(() -> {
-                        logger.error("Staff not found for update with ID: {}", staff.getId());
-                        return new ResourceNotFoundException("Staff", staff.getId().toString());
-                    });
-
-            if (staff.getPassword() != null && !staff.getPassword().isEmpty()) {
-                staff.setPassword(passwordEncoder.encode(staff.getPassword()));
+            // Check if staff exists
+            Optional<Staff> existingStaff = staffRepository.findById(staff.getId());
+            if (existingStaff.isEmpty()) {
+                logger.error("Staff not found for update with ID: {}", staff.getId());
+                throw new ResourceNotFoundException("Staff", staff.getId().toString());
             }
 
+            // Update timestamp
+            staff.setCreatedAt(existingStaff.get().getCreatedAt()); // Preserve original creation time
+
             Staff updatedStaff = staffRepository.save(staff);
-            logger.info("Successfully updated staff: {} (ID: {})", updatedStaff.getUsername(), updatedStaff.getId());
+            logger.info("Successfully updated staff: {}", updatedStaff.getUsername());
+            return updatedStaff;
         } catch (Exception e) {
             logger.error("Error updating staff: {}", staff.getUsername(), e);
             throw e;
         }
     }
 
-    public Optional<Staff> findByIdOptional(Long id) {
-        logger.debug("Finding staff by ID (optional): {}", id);
+    public boolean existsByUsername(String username) {
+        logger.debug("Checking if staff exists with username: {}", username);
 
-        if (id == null) {
-            logger.error("Staff ID is null");
-            throw new ValidationException("Staff ID cannot be null");
+        if (username == null || username.trim().isEmpty()) {
+            logger.error("Username is null or empty");
+            throw new ValidationException("Username cannot be null or empty");
         }
 
         try {
-            Optional<Staff> staff = staffRepository.findById(id);
-            if (staff.isPresent()) {
-                logger.info("Successfully found staff by ID: {}", id);
-            } else {
-                logger.debug("Staff not found by ID: {}", id);
-            }
-            return staff;
+            boolean exists = staffRepository.findByUsername(username).isPresent();
+            logger.debug("Staff exists with username {}: {}", username, exists);
+            return exists;
         } catch (Exception e) {
-            logger.error("Error finding staff by ID: {}", id, e);
-            throw new RuntimeException("Failed to find staff by ID", e);
+            logger.error("Error checking if staff exists with username: {}", username, e);
+            throw new RuntimeException("Failed to check staff existence", e);
+        }
+    }
+
+    public boolean existsByEmail(String email) {
+        logger.debug("Checking if staff exists with email: {}", email);
+
+        if (email == null || email.trim().isEmpty()) {
+            logger.error("Email is null or empty");
+            throw new ValidationException("Email cannot be null or empty");
+        }
+
+        try {
+            boolean exists = staffRepository.findByEmail(email).isPresent();
+            logger.debug("Staff exists with email {}: {}", email, exists);
+            return exists;
+        } catch (Exception e) {
+            logger.error("Error checking if staff exists with email: {}", email, e);
+            throw new RuntimeException("Failed to check staff existence by email", e);
         }
     }
 }

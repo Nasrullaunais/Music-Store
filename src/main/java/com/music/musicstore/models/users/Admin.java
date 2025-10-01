@@ -48,6 +48,11 @@ public class Admin implements UserDetails {
     @Column(name = "created_at", nullable = true)
     private LocalDateTime createdAt;
 
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+
     // Default constructor required by JPA
     public Admin() {
     }
