@@ -246,6 +246,7 @@ public class AdminService {
             throw new ValidationException("Admin ID cannot be null for update");
         }
 
+
         try {
             Admin existingAdmin = adminRepository.findById(admin.getId())
                     .orElseThrow(() -> {

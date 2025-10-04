@@ -38,4 +38,15 @@ public class EmailSender {
 
         sendReceiptEmail(customerEmail, subject, body);
     }
+
+    public void sendUserStatusChangeEmail(String toEmail, String username, String newStatus) {
+        String subject = "Account Status Update";
+        String body = "Dear " + username + ",\n\n" +
+                      "We would like to inform you that your account status has been changed to: " + newStatus + ".\n\n" +
+                      "If you have any questions or need further assistance, please feel free to contact our support team.\n\n" +
+                      "Best regards,\n" +
+                      "Music Store Team";
+
+        sendReceiptEmail(toEmail, subject, body);
+    }
 }

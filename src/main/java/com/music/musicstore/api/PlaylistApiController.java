@@ -99,7 +99,7 @@ public class PlaylistApiController {
 
     /**
      * Get a specific playlist with its music tracks
-     * GET /api/playlists/{id}
+     * GET /api//api/playlists/{id}playlists/{id}
      */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getPlaylistById(

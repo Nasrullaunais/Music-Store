@@ -107,6 +107,16 @@ public class StaffApiController {
             @PathVariable Long ticketId,
             @RequestBody TicketReplyRequest request,
             @AuthenticationPrincipal Staff staff) {
+        if (staff == null) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Staff is not logged in"));
+        }
+
+        if (request.getMessage() == null || request.getMessage().isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Message cannot be empty"));
+        }
+
         try {
             logger.info("Staff {} is replying to ticket {}", staff.getUsername(), ticketId);
             // Get the existing staff entity from database using StaffService
@@ -126,6 +136,16 @@ public class StaffApiController {
     public ResponseEntity<?> assignTicket(
             @PathVariable Long ticketId,
             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Staff is not logged in"));
+        }
+
+        if (userDetails.getUsername().equals("admin")) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Staff cannot assign tickets to admin"));
+        }
+
         try {
             // Get the existing staff entity from database using StaffService
             Staff staff = staffService.findByUsername(userDetails.getUsername());

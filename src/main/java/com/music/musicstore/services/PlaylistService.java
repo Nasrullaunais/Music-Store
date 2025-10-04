@@ -90,7 +90,8 @@ public class PlaylistService {
             logger.error("Error fetching playlists for customer '{}': {}", customerUsername, e.getMessage());
             throw e;
         }
-    }
+
+}
 
     /**
      * Get a specific playlist with its music tracks

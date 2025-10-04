@@ -7,14 +7,7 @@ import com.music.musicstore.dto.StaffRegistrationResponse;
 import com.music.musicstore.dto.AdminRegistrationRequest;
 import com.music.musicstore.dto.AdminRegistrationResponse;
 import com.music.musicstore.dto.ErrorResponse;
-import com.music.musicstore.services.UnifiedUserService;
-import com.music.musicstore.services.MusicService;
-import com.music.musicstore.services.OrderService;
-import com.music.musicstore.services.TicketService;
-import com.music.musicstore.services.StaffService;
-import com.music.musicstore.services.AdminService;
-import com.music.musicstore.services.ReviewService;
-import com.music.musicstore.services.AuditLogService;
+import com.music.musicstore.services.*;
 import com.music.musicstore.models.users.Staff;
 import com.music.musicstore.models.users.Admin;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +62,8 @@ public class AdminApiController {
 
     @Autowired
     private ConfigurableApplicationContext applicationContext;
+    @Autowired
+    private EmailSender emailSender;
 
     // User Management
     @PostMapping("/users/create")
@@ -240,6 +235,9 @@ public class AdminApiController {
             HttpServletRequest httpRequest) {
         try {
             unifiedUserService.updateUserStatus(userId, request.isEnabled());
+            emailSender.sendUserStatusChangeEmail(
+                unifiedUserService.getUserById(userId).getEmail(), currentUser.getUsername(), request.isEnabled()? "Activated" : "Deactivated");
+
 
             auditLogService.logAdminAction(
                 currentUser.getUsername(),
