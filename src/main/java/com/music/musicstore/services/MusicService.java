@@ -2,6 +2,9 @@ package com.music.musicstore.services;
 
 import com.music.musicstore.models.music.Music;
 import com.music.musicstore.repositories.MusicRepository;
+import com.music.musicstore.repositories.OrderItemRepository;
+import com.music.musicstore.repositories.CartItemRepository;
+import com.music.musicstore.repositories.ReviewRepository;
 import com.music.musicstore.dto.MusicDto;
 import com.music.musicstore.exceptions.ResourceNotFoundException;
 import com.music.musicstore.exceptions.ValidationException;
@@ -34,11 +37,21 @@ public class MusicService {
 
     private final MusicRepository musicRepository;
     private final FileStorageService fileStorageService;
+    private final OrderItemRepository orderItemRepository;
+    private final CartItemRepository cartItemRepository;
+    private final ReviewRepository reviewRepository;
 
     @Autowired
-    public MusicService(MusicRepository musicRepository, FileStorageService fileStorageService) {
+    public MusicService(MusicRepository musicRepository,
+                       FileStorageService fileStorageService,
+                       OrderItemRepository orderItemRepository,
+                       CartItemRepository cartItemRepository,
+                       ReviewRepository reviewRepository) {
         this.musicRepository = musicRepository;
         this.fileStorageService = fileStorageService;
+        this.orderItemRepository = orderItemRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.reviewRepository = reviewRepository;
         logger.info("MusicService initialized successfully");
     }
 
@@ -66,7 +79,7 @@ public class MusicService {
     }
 
     public void deleteMusic(Long id) {
-        logger.debug("Deleting music with ID: {}", id);
+        logger.debug("Hard deleting music with ID: {}", id);
 
         if (id == null) {
             logger.error("Music ID is null");
@@ -83,7 +96,48 @@ public class MusicService {
 
             Music music = musicOpt.get();
 
-            // Attempt to delete associated files from storage (safe cleanup)
+            // STEP 1: Delete from customer_purchased_music join table (Many-to-Many)
+            try {
+                // Use native query to delete from the join table
+                musicRepository.deleteFromCustomerPurchasedMusic(id);
+                logger.info("Removed music ID {} from customer purchased music records", id);
+            } catch (Exception e) {
+                logger.warn("Error removing from customer_purchased_music for music ID: {}", id, e);
+            }
+
+            // STEP 2: Delete related cart items
+            try {
+                List<com.music.musicstore.models.cart.CartItem> cartItems = cartItemRepository.findAll().stream()
+                    .filter(ci -> ci.getMusic() != null && ci.getMusic().getId().equals(id))
+                    .toList();
+                if (!cartItems.isEmpty()) {
+                    cartItemRepository.deleteAll(cartItems);
+                    logger.info("Deleted {} cart items for music ID: {}", cartItems.size(), id);
+                }
+            } catch (Exception e) {
+                logger.warn("Error deleting cart items for music ID: {}", id, e);
+            }
+
+            // STEP 3: Delete related reviews
+            try {
+                List<com.music.musicstore.models.music.Review> reviews = reviewRepository.findByMusic(music);
+                if (!reviews.isEmpty()) {
+                    reviewRepository.deleteAll(reviews);
+                    logger.info("Deleted {} reviews for music ID: {}", reviews.size(), id);
+                }
+            } catch (Exception e) {
+                logger.warn("Error deleting reviews for music ID: {}", id, e);
+            }
+
+            // STEP 4: Nullify music reference in order items (preserve order history with snapshot data)
+            try {
+                orderItemRepository.nullifyMusicReference(music);
+                logger.info("Nullified music references in order items for music ID: {}", id);
+            } catch (Exception e) {
+                logger.warn("Error nullifying order item references for music ID: {}", id, e);
+            }
+
+            // STEP 5: Delete associated files from storage
             try {
                 String audioPath = music.getAudioFilePath();
                 String imagePath = music.getImageUrl();
@@ -113,10 +167,11 @@ public class MusicService {
                 // proceed to delete DB record even if files couldn't be deleted
             }
 
+            // STEP 6: Finally delete the music record
             musicRepository.deleteById(id);
-            logger.info("Successfully deleted music with ID: {}", id);
+            logger.info("Successfully hard deleted music with ID: {}", id);
         } catch (Exception e) {
-            logger.error("Error deleting music with ID: {}", id, e);
+            logger.error("Error hard deleting music with ID: {}", id, e);
             throw new RuntimeException("Failed to delete music", e);
         }
     }

@@ -1,0 +1,84 @@
+Sprint,Task ID,Task Name,Category,Owner,Status,Priority,Description,Acceptance Criteria
+Sprint 1,T1.1,Setup Spring Boot Project Structure,General,Nasrulla,Completed,High,Configure Spring Boot with Maven dependencies and project structure,Project builds successfully with all dependencies
+Sprint 1,T1.2,Design Database Schema,General,Nasrulla,Completed,High,Design and implement database schema for all entities,All tables created with proper relationships and constraints
+Sprint 1,T1.3,Implement JWT Authentication,Admin/Auth,Nasrulla,Completed,High,Implement JWT-based authentication with token generation and validation,Users can login and receive JWT tokens for authenticated requests
+Sprint 1,T1.4,Setup Role-Based Access Control,Admin/Auth,Nasrulla,Completed,High,Configure security with roles: CUSTOMER ARTIST STAFF ADMIN,Endpoints are properly protected based on user roles
+Sprint 1,T1.5,Create User Registration System,Admin/Auth,Nasrulla,Completed,High,Implement unified user registration for all user types,Users can register with appropriate roles and credentials
+Sprint 1,T1.6,Configure CORS and Security,Admin/Auth,Nasrulla,Completed,High,Setup CORS configuration for frontend communication,Frontend can make cross-origin requests successfully
+Sprint 1,T1.7,Implement Global Exception Handling,General,Nasrulla,Completed,Medium,Create GlobalExceptionHandler with custom exceptions,All errors return standardized error responses
+Sprint 1,T1.8,Setup Static Resource Serving,General,Nasrulla,Completed,Medium,Configure static resource serving for music files and images,Music files and images accessible via static URLs
+Sprint 1,T1.9,Implement Cart Management,Cart,Tharuka,Completed,High,Create cart entity and CRUD operations for adding/removing items,Customers can add music to cart and manage cart items
+Sprint 1,T1.10,Implement Cart Item Validation,Cart,Tharuka,Completed,Medium,Add validation to prevent duplicate items and invalid operations,Users cannot add duplicate music or invalid items
+Sprint 1,T1.11,Create Ticket Entity and Schema,Ticket,Asirindu,Completed,High,Design and implement support ticket database schema,Ticket tables created with proper relationships
+Sprint 1,T1.12,Implement Ticket Creation,Ticket,Asirindu,Completed,High,Create endpoint for customers to create support tickets,Customers can create tickets with subject and description
+Sprint 1,T1.13,Create Playlist Entity,Playlist,Sathoshika,Completed,High,Design playlist schema with many-to-many music relationship,Playlist table created with proper structure
+Sprint 1,T1.14,Implement Create Playlist,Playlist,Sathoshika,Completed,High,Create endpoint for customers to create playlists,Customers can create playlists with name and description
+Sprint 1,T1.15,Create Review Entity,Review,Herath,Completed,High,Design review schema with rating and comment,Review table created with proper constraints
+Sprint 1,T1.16,Implement Create Review,Review,Herath,Completed,High,Allow customers to review purchased music,Customers can submit reviews with rating and comment
+Sprint 1,T1.17,Implement File Storage Service,Artist,Sujeewantha,Completed,High,Create service for storing and managing uploaded files,Files are stored securely with proper naming
+Sprint 1,T1.18,Implement Artist Music Upload,Artist,Sujeewantha,Completed,High,Create music upload endpoint with multipart file handling,Artists can upload music files with metadata
+Sprint 1,T1.19,Add Cover Image Upload,Artist,Sujeewantha,Completed,Medium,Implement cover image upload for music tracks,Artists can upload cover images with music
+Sprint 1,T1.20,Music Search Functionality,General,Nasrulla,Completed,High,Implement search endpoint for music tracks,Users can search music by title or artist
+
+Sprint 2,T2.1,Implement Audit Log System,Admin,Nasrulla,Completed,Medium,Create audit logging for admin actions and critical operations,All admin actions are logged with timestamps and details
+Sprint 2,T2.2,Create Data Initializers,Admin,Nasrulla,Completed,Low,Implement data initializers for admin and staff accounts,Default admin and staff accounts created on startup
+Sprint 2,T2.3,Admin User Management,Admin,Nasrulla,Completed,High,Create endpoints for admin to manage all users,Admins can create update and delete users
+Sprint 2,T2.4,User Status Toggle,Admin,Nasrulla,Completed,High,Implement enable/disable user accounts,Admins can ban or activate user accounts
+Sprint 2,T2.5,Build Checkout System,Checkout,Tharuka,Completed,High,Implement checkout flow with order creation,Customers can checkout and orders are created successfully
+Sprint 2,T2.6,Create Order Processing,Checkout,Tharuka,Completed,High,Implement order service with order management,Orders are processed and stored with proper status
+Sprint 2,T2.7,Add Purchased Music Tracking,Checkout,Tharuka,Completed,High,Track purchased music for each customer,Customers can access their purchased music library
+Sprint 2,T2.8,Fix Cart-Customer Circular References,Cart,Tharuka,Completed,High,Resolve JSON serialization issues with @JsonIgnore,Cart endpoints return proper JSON without infinite loops
+Sprint 2,T2.9,Build Ticket Messaging System,Ticket,Asirindu,Completed,High,Implement chat-like messaging for tickets,Users can send and receive messages on tickets
+Sprint 2,T2.10,Create Ticket Status Management,Ticket,Asirindu,Completed,High,Implement ticket status updates (OPEN IN_PROGRESS URGENT CLOSED),Staff can update ticket statuses
+Sprint 2,T2.11,Fix Ticket-Message Circular References,Ticket,Asirindu,Completed,High,Resolve JSON serialization issues in ticket system,Ticket endpoints return clean JSON without loops
+Sprint 2,T2.12,Add Music to Playlist,Playlist,Sathoshika,Completed,High,Implement functionality to add music tracks to playlist,Users can add multiple tracks to playlists
+Sprint 2,T2.13,Remove Music from Playlist,Playlist,Sathoshika,Completed,Medium,Allow users to remove tracks from their playlists,Users can remove individual tracks from playlists
+Sprint 2,T2.14,Get Playlist with Music,Playlist,Sathoshika,Completed,High,Create endpoint to retrieve playlist with all tracks,Playlists returned with complete music list
+Sprint 2,T2.15,Calculate Average Rating,Review,Herath,Completed,High,Auto-calculate music rating from reviews,Music rating updated when reviews are added/modified/deleted
+Sprint 2,T2.16,Update Existing Review,Review,Herath,Completed,Medium,Enable customers to edit their reviews,Users can modify their own reviews
+Sprint 2,T2.17,Delete Review,Review,Herath,Completed,Medium,Allow customers to delete their reviews,Users can remove their own reviews
+Sprint 2,T2.18,Add Artist Profile Management,Artist,Sujeewantha,Completed,Medium,Implement artist profile and information management,Artists can manage their profile and artist name
+Sprint 2,T2.19,Create Artist Dashboard,Artist,Sujeewantha,Completed,Medium,Build endpoint to retrieve artist's uploaded music,Artists can view all their uploaded music
+Sprint 2,T2.20,Implement Music Metadata Management,Artist,Sujeewantha,Completed,High,Add endpoints for updating music details,Artists can update music title genre price description
+
+Sprint 3,T3.1,View All Users with Pagination,Admin,Nasrulla,Completed,High,Create paginated user list with role filtering,Admins can browse users with filters
+Sprint 3,T3.2,Music Content Flagging,Admin,Nasrulla,Completed,High,Allow customers to flag inappropriate music,Customers can report problematic content
+Sprint 3,T3.3,View Flagged Content,Admin,Nasrulla,Completed,High,Admin endpoint to view all flagged music,Admins can see flagged items with reasons
+Sprint 3,T3.4,Delete Flagged Music,Admin,Nasrulla,Completed,High,Allow admins to remove flagged content,Admins can delete inappropriate music
+Sprint 3,T3.5,Unflag Music,Admin,Nasrulla,Completed,Medium,Allow admins to remove flags after review,False flags can be cleared by admins
+Sprint 3,T3.6,Implement Cart Total Calculation,Cart,Tharuka,Completed,Medium,Calculate cart totals with BigDecimal precision,Cart totals calculated accurately with proper decimal handling
+Sprint 3,T3.7,Create Order History View,Checkout,Tharuka,Completed,Medium,Implement endpoints to view customer order history,Customers can view their past orders
+Sprint 3,T3.8,Implement Clear Cart Functionality,Cart,Tharuka,Completed,Low,Add endpoint to clear all cart items,Customers can clear their entire cart
+Sprint 3,T3.9,Create Order Analytics for Admin,Checkout,Tharuka,Completed,Medium,Implement order statistics and revenue tracking,Admins can view order counts and revenue data
+Sprint 3,T3.10,Implement Ticket Assignment,Ticket,Asirindu,Completed,Medium,Allow admins to assign tickets to staff members,Admins can assign tickets and staff receive notifications
+Sprint 3,T3.11,Create Ticket Conversation View,Ticket,Asirindu,Completed,Medium,Implement endpoint to retrieve full ticket conversation,Users can view complete message history
+Sprint 3,T3.12,Implement Ticket Filtering,Ticket,Asirindu,Completed,Medium,Add filtering by status and assignment for staff,Staff can filter tickets by various criteria
+Sprint 3,T3.13,Add Urgent Ticket Handling,Ticket,Asirindu,Completed,Medium,Implement urgent ticket prioritization,Urgent tickets are highlighted and prioritized
+Sprint 3,T3.14,List Customer Playlists,Playlist,Sathoshika,Completed,Medium,Show all playlists created by a customer,Customers can view all their playlists
+Sprint 3,T3.15,Update Playlist Details,Playlist,Sathoshika,Completed,Medium,Allow updating playlist name and description,Users can modify playlist information
+Sprint 3,T3.16,Delete Playlist,Playlist,Sathoshika,Completed,Medium,Implement playlist deletion functionality,Users can delete their own playlists
+Sprint 3,T3.17,Get Reviews for Music,Review,Herath,Completed,High,Create paginated endpoint for music reviews,Reviews displayed with pagination
+Sprint 3,T3.18,Get User's Review for Music,Review,Herath,Completed,Medium,Retrieve specific user's review for a music track,Users can see their own review on music page
+Sprint 3,T3.19,Prevent Multiple Reviews,Review,Herath,Completed,Medium,Validate one review per user per music,Users cannot submit multiple reviews for same music
+Sprint 3,T3.20,Add Music Deletion for Artists,Artist,Sujeewantha,Completed,Medium,Allow artists to delete their own music,Artists can delete music they uploaded
+
+Sprint 4,T4.1,Admin Analytics Dashboard,Admin,Nasrulla,Completed,High,Implement system overview with key metrics,Dashboard shows users music orders revenue counts
+Sprint 4,T4.2,Revenue Analytics,Admin,Nasrulla,Completed,Medium,Calculate daily and total revenue statistics,Admins can view revenue trends and totals
+Sprint 4,T4.3,Apply Refunds,Admin,Nasrulla,Not Completed,High,Implement complete refund processing with payment gateway,Refunds processed and customer accounts credited
+Sprint 4,T4.4,Server Shutdown Management,Admin,Nasrulla,Completed,Medium,Implement graceful server shutdown with delay,Admins can shutdown server with notification
+Sprint 4,T4.5,Email Notification System,Admin,Nasrulla,Completed,Medium,Implement email sender service for notifications,System can send emails for various events
+Sprint 4,T4.6,Staff Registration and Management,Admin,Nasrulla,Completed,Medium,Create staff account management,Admins can create and manage staff accounts
+Sprint 4,T4.7,System Health Check,Admin,Nasrulla,Completed,Low,Create health check endpoint for monitoring,System health status accessible
+Sprint 4,T4.8,Music Browse by Genre,General,Nasrulla,Completed,Medium,Filter music by genre category,Users can browse music by genre
+Sprint 4,T4.9,Featured Music Section,General,Nasrulla,Completed,Low,Display featured or recommended music,Homepage shows featured tracks
+Sprint 4,T4.10,Album Management,General,Nasrulla,Completed,Medium,Create album entity and management,Artists can organize music into albums
+Sprint 4,T4.11,Music Download for Purchased Tracks,General,Tharuka,Completed,High,Allow customers to download their purchased music,Customers can download files they own
+Sprint 4,T4.12,Customer Purchase History,General,Tharuka,Completed,Medium,Track and display customer purchase history,Customers can view all purchases
+Sprint 4,T4.13,Create Ticket Reply Validation,Ticket,Asirindu,Completed,Low,Add validation for ticket messages and replies,Message size limits and validation enforced
+Sprint 4,T4.14,Prevent Duplicate Music in Playlist,Playlist,Sathoshika,Completed,Low,Add validation to prevent adding duplicate tracks,Same music cannot be added twice to a playlist
+Sprint 4,T4.15,Implement Playlist Sharing,Playlist,Sathoshika,Completed,Low,Add public/private playlist functionality,Playlists can be marked as public or private
+Sprint 4,T4.16,Implement Review Moderation,Review,Herath,Completed,Medium,Allow admins to moderate and delete reviews,Admins can remove inappropriate reviews
+Sprint 4,T4.17,Detect Inappropriate Content,Review,Herath,Not Completed,Medium,Implement profanity filter for review comments,Reviews with inappropriate words are flagged or rejected
+Sprint 4,T4.18,Create Artist Analytics,Artist,Sujeewantha,Completed,Low,Show artist-specific analytics (sales reviews),Artists can view statistics about their music
+Sprint 4,T4.19,Create Artist Revenue Tracking,Artist,Sujeewantha,Completed,Medium,Track revenue generated by each artist's music,Artists can see earnings from their music sales
+Sprint 4,T4.20,Validate Audio File Format,Artist,Sujeewantha,Not Completed,High,Add validation for supported audio formats (MP3 WAV FLAC),Only supported audio formats can be uploaded

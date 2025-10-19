@@ -10,6 +10,7 @@ import com.music.musicstore.services.OrderService;
 import com.music.musicstore.services.MusicService;
 import com.music.musicstore.services.ReviewService;
 import com.music.musicstore.services.TicketService;
+import com.music.musicstore.services.RefundService;
 import com.music.musicstore.repositories.CustomerRepository;
 import com.music.musicstore.dto.TicketMessageDto;
 import com.music.musicstore.dto.TicketMessageMapper;
@@ -72,6 +73,9 @@ public class CustomerApiController {
 
     @Autowired
     private TicketMapper ticketMapper;
+
+    @Autowired
+    private RefundService refundService;
 
     @GetMapping("/purchased")
     public ResponseEntity<Set<Music>> getPurchasedMusic(@AuthenticationPrincipal Customer customer) {
@@ -154,6 +158,86 @@ public class CustomerApiController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch order history: " + e.getMessage()));
+        }
+    }
+
+    // Refund Management
+    @PostMapping("/orders/{orderId}/refund")
+    public ResponseEntity<?> applyForRefund(
+            @PathVariable Long orderId,
+            @Valid @RequestBody com.music.musicstore.dto.RefundRequestDto request,
+            @AuthenticationPrincipal Customer customer) {
+        logger.info("Customer {} applying for refund on order {}", customer.getUsername(), orderId);
+        try {
+            com.music.musicstore.models.order.RefundRequest refundRequest =
+                refundService.applyForRefund(orderId, customer, request.getReason());
+            logger.info("Refund request {} created successfully for order {}", refundRequest.getId(), orderId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(refundRequest);
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Refund request failed for order {}: {}", orderId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error applying for refund on order {}: {}", orderId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to apply for refund: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/orders/{orderId}/refund/eligible")
+    public ResponseEntity<?> checkRefundEligibility(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal Customer customer) {
+        try {
+            boolean eligible = refundService.isOrderEligibleForRefund(orderId);
+            return ResponseEntity.ok(Map.of(
+                "orderId", orderId,
+                "eligible", eligible,
+                "message", eligible ? "Order is eligible for refund (within 24 hours)" :
+                    "Order is not eligible for refund (must be within 24 hours of purchase)"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Failed to check eligibility: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/refunds")
+    public ResponseEntity<?> getMyRefundRequests(@AuthenticationPrincipal Customer customer) {
+        logger.info("Customer {} fetching refund requests", customer.getUsername());
+        try {
+            List<com.music.musicstore.models.order.RefundRequest> refundRequests =
+                refundService.getCustomerRefundRequests(customer);
+            return ResponseEntity.ok(refundRequests);
+        } catch (Exception e) {
+            logger.error("Error fetching refund requests for customer {}: {}",
+                customer.getUsername(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch refund requests: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/refunds/{refundId}")
+    public ResponseEntity<?> getRefundRequestDetails(
+            @PathVariable Long refundId,
+            @AuthenticationPrincipal Customer customer) {
+        try {
+            com.music.musicstore.models.order.RefundRequest refundRequest =
+                refundService.getRefundRequestById(refundId);
+
+            // Verify the refund request belongs to the customer
+            if (!refundRequest.getCustomer().getId().equals(customer.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("Access denied"));
+            }
+
+            return ResponseEntity.ok(refundRequest);
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch refund request: " + e.getMessage()));
         }
     }
 

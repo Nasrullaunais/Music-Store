@@ -24,10 +24,14 @@ public class OrderItem {
     private Order order;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = true)
     @JsonIgnoreProperties({"artist", "reviews", "orderItems", "cartItems"})
     private Music music;
 
+
+    public Music getMusic() {
+        return music;
+    }
 
     @NotNull(message = "Unit price is required")
     @Column(name = "unit_price", nullable = false)

@@ -1,0 +1,319 @@
+@startuml Music Store Entity Class Diagram
+
+' ===================================
+' STYLE CONFIGURATION
+' ===================================
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor<<User>> LightBlue
+    BackgroundColor<<Music>> LightGreen
+    BackgroundColor<<Commerce>> LightYellow
+    BackgroundColor<<Support>> LightPink
+    BackgroundColor<<System>> LightGray
+}
+skinparam defaultFontSize 9
+skinparam classFontSize 9
+
+' ===================================
+' USER ENTITIES
+' ===================================
+package "User Entities" {
+    interface UserDetails <<interface>> {
+        +getUsername(): String
+        +getPassword(): String
+        +getAuthorities(): Collection
+        +isEnabled(): boolean
+    }
+
+    class Customer <<User>> {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -role: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+        -cart: Cart
+        -purchasedMusic: Set<Music>
+    }
+
+    class Artist <<User>> {
+        -id: Long
+        -userName: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -artistName: String
+        -role: String
+        -photoUrl: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+    }
+
+    class Admin <<User>> {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -role: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+    }
+
+    class Staff <<User>> {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -role: String
+        -position: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+    }
+}
+
+' ===================================
+' MUSIC ENTITIES
+' ===================================
+package "Music Entities" {
+    class Music <<Music>> {
+        -id: Long
+        -name: String
+        -description: String
+        -price: BigDecimal
+        -imageUrl: String
+        -audioFilePath: String
+        -originalFileName: String
+        -category: String
+        -artistUsername: String
+        -albumName: String
+        -genre: String
+        -releaseYear: Integer
+        -averageRating: BigDecimal
+        -totalReviews: Integer
+        -isFlagged: Boolean
+        -flaggedAt: LocalDateTime
+        -flaggedByCustomerId: Long
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class Album <<Music>> {
+        -id: Long
+        -title: String
+        -description: String
+        -artistUsername: String
+        -genre: String
+        -cover: String
+        -price: BigDecimal
+        -coverImageUrl: String
+        -releaseDate: LocalDateTime
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class Review <<Music>> {
+        -id: Long
+        -music: Music
+        -customer: Customer
+        -rating: Integer
+        -comment: String
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class Playlist <<Music>> {
+        -id: Long
+        -name: String
+        -customer: Customer
+        -musics: Set<Music>
+        -trackCount: Integer
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        +addMusic(music: Music): void
+        +removeMusic(music: Music): void
+    }
+}
+
+' ===================================
+' COMMERCE ENTITIES
+' ===================================
+package "Commerce Entities" {
+    class Cart <<Commerce>> {
+        -id: Long
+        -customer: Customer
+        -totalAmount: BigDecimal
+        -items: List<CartItem>
+        -customerName: String
+        +addItem(item: CartItem): void
+        +removeItem(item: CartItem): void
+        +clear(): void
+    }
+
+    class CartItem <<Commerce>> {
+        -id: Long
+        -cart: Cart
+        -music: Music
+        -unitPrice: BigDecimal
+        -addedAt: String
+        +getTotalPrice(): BigDecimal
+    }
+
+    class Order <<Commerce>> {
+        -id: Long
+        -customer: Customer
+        -orderDate: LocalDateTime
+        -totalAmount: BigDecimal
+        -status: OrderStatus
+        -paymentMethod: String
+        -orderItems: List<OrderItem>
+        +calculateTotal(): void
+    }
+
+    enum OrderStatus {
+        PENDING
+        PROCESSING
+        SHIPPED
+        DELIVERED
+        CANCELLED
+    }
+
+    class OrderItem <<Commerce>> {
+        -id: Long
+        -order: Order
+        -music: Music
+        -unitPrice: BigDecimal
+        -musicTitle: String
+        -artistName: String
+        +getSubtotal(): BigDecimal
+    }
+}
+
+' ===================================
+' SUPPORT ENTITIES
+' ===================================
+package "Support Entities" {
+    class Ticket <<Support>> {
+        -id: Long
+        -order: Order
+        -customer: Customer
+        -assignedStaff: Staff
+        -subject: String
+        -status: String
+        -createdAt: LocalDateTime
+        -closedAt: LocalDateTime
+        -messages: List<TicketMessage>
+        -customerName: String
+        -assignedStaffName: String
+        +addMessage(msg: TicketMessage): void
+    }
+
+    class TicketMessage <<Support>> {
+        -id: Long
+        -ticket: Ticket
+        -content: String
+        -timestamp: LocalDateTime
+        -isFromStaff: boolean
+        -customer: Customer
+        -staff: Staff
+        -ticketId: Long
+        -customerName: String
+        -staffName: String
+    }
+}
+
+' ===================================
+' SYSTEM ENTITIES
+' ===================================
+package "System Entities" {
+    class AuditLog <<System>> {
+        -id: Long
+        -adminUsername: String
+        -action: String
+        -resourceType: String
+        -resourceId: Long
+        -targetUserId: Long
+        -details: String
+        -ipAddress: String
+        -userAgent: String
+        -success: Boolean
+        -errorMessage: String
+        -timestamp: LocalDateTime
+        -sessionId: String
+        -severity: AuditSeverity
+    }
+
+    enum AuditSeverity {
+        LOW
+        MEDIUM
+        HIGH
+        CRITICAL
+    }
+}
+
+' ===================================
+' RELATIONSHIPS - USER ENTITIES
+' ===================================
+UserDetails <|.. Customer
+UserDetails <|.. Artist
+UserDetails <|.. Admin
+UserDetails <|.. Staff
+
+' ===================================
+' RELATIONSHIPS - CUSTOMER
+' ===================================
+Customer "1" -- "1" Cart : has >
+Customer "1" -- "*" Order : places >
+Customer "1" -- "*" Review : writes >
+Customer "1" -- "*" Playlist : creates >
+Customer "1" -- "*" Ticket : creates >
+Customer "*" -- "*" Music : purchases >
+
+' ===================================
+' RELATIONSHIPS - ARTIST
+' ===================================
+Artist "1" -- "0..*" Music : uploads >
+
+' ===================================
+' RELATIONSHIPS - MUSIC
+' ===================================
+Music "*" -- "1" Album : belongs to >
+Music "1" -- "*" Review : has >
+Music "*" -- "*" Playlist : included in >
+Music "1" -- "*" CartItem : in >
+Music "1" -- "*" OrderItem : in >
+
+' ===================================
+' RELATIONSHIPS - COMMERCE
+' ===================================
+Cart "1" -- "*" CartItem : contains >
+Order "1" -- "*" OrderItem : contains >
+Order -- OrderStatus
+
+' ===================================
+' RELATIONSHIPS - SUPPORT
+' ===================================
+Ticket "*" -- "1" Customer : created by >
+Ticket "*" -- "0..1" Staff : assigned to >
+Ticket "*" -- "0..1" Order : related to >
+Ticket "1" -- "*" TicketMessage : contains >
+TicketMessage "*" -- "0..1" Customer : from >
+TicketMessage "*" -- "0..1" Staff : from >
+
+' ===================================
+' RELATIONSHIPS - SYSTEM
+' ===================================
+AuditLog -- AuditSeverity
+
+@enduml
+

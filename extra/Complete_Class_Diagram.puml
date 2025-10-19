@@ -1,0 +1,544 @@
+@startuml Music Store Complete Class Diagram
+
+' ===================================
+' STYLE CONFIGURATION
+' ===================================
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor<<User>> LightBlue
+    BackgroundColor<<Music>> LightGreen
+    BackgroundColor<<Commerce>> LightYellow
+    BackgroundColor<<Support>> LightPink
+    BackgroundColor<<System>> LightGray
+}
+skinparam defaultFontSize 9
+skinparam classFontSize 9
+
+' ===================================
+' USER ENTITIES PACKAGE
+' ===================================
+package "User Management" {
+    interface UserDetails <<interface>> {
+        +getUsername(): String
+        +getPassword(): String
+        +getAuthorities(): Collection
+        +isEnabled(): boolean
+    }
+
+    class Customer <<User>> {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -role: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+        -cart: Cart
+        -purchasedMusic: Set<Music>
+    }
+
+    class Artist <<User>> {
+        -id: Long
+        -userName: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -artistName: String
+        -role: String
+        -photoUrl: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+    }
+
+    class Admin <<User>> {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -role: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+    }
+
+    class Staff <<User>> {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -firstName: String
+        -lastName: String
+        -role: String
+        -position: String
+        -enabled: boolean
+        -createdAt: LocalDateTime
+    }
+}
+
+' ===================================
+' MUSIC ENTITIES PACKAGE
+' ===================================
+package "Music Management" {
+    class Music <<Music>> {
+        -id: Long
+        -name: String
+        -description: String
+        -price: BigDecimal
+        -imageUrl: String
+        -audioFilePath: String
+        -originalFileName: String
+        -category: String
+        -artistUsername: String
+        -albumName: String
+        -genre: String
+        -releaseYear: Integer
+        -averageRating: BigDecimal
+        -totalReviews: Integer
+        -isFlagged: Boolean
+        -flaggedAt: LocalDateTime
+        -flaggedByCustomerId: Long
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class Album <<Music>> {
+        -id: Long
+        -title: String
+        -description: String
+        -artistUsername: String
+        -genre: String
+        -cover: String
+        -price: BigDecimal
+        -coverImageUrl: String
+        -releaseDate: LocalDateTime
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class Review <<Music>> {
+        -id: Long
+        -music: Music
+        -customer: Customer
+        -rating: Integer
+        -comment: String
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+    }
+
+    class Playlist <<Music>> {
+        -id: Long
+        -name: String
+        -customer: Customer
+        -musics: Set<Music>
+        -trackCount: Integer
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        +addMusic(music: Music): void
+        +removeMusic(music: Music): void
+    }
+}
+
+' ===================================
+' COMMERCE ENTITIES PACKAGE
+' ===================================
+package "Commerce & Orders" {
+    class Cart <<Commerce>> {
+        -id: Long
+        -customer: Customer
+        -totalAmount: BigDecimal
+        -items: List<CartItem>
+        -customerName: String
+        +addItem(item: CartItem): void
+        +removeItem(item: CartItem): void
+        +clear(): void
+    }
+
+    class CartItem <<Commerce>> {
+        -id: Long
+        -cart: Cart
+        -music: Music
+        -unitPrice: BigDecimal
+        -addedAt: String
+        +getTotalPrice(): BigDecimal
+    }
+
+    class Order <<Commerce>> {
+        -id: Long
+        -customer: Customer
+        -orderDate: LocalDateTime
+        -totalAmount: BigDecimal
+        -status: OrderStatus
+        -paymentMethod: String
+        -orderItems: List<OrderItem>
+        +calculateTotal(): void
+    }
+
+    enum OrderStatus {
+        PENDING
+        PROCESSING
+        SHIPPED
+        DELIVERED
+        CANCELLED
+    }
+
+    class OrderItem <<Commerce>> {
+        -id: Long
+        -order: Order
+        -music: Music
+        -unitPrice: BigDecimal
+        -musicTitle: String
+        -artistName: String
+        +getSubtotal(): BigDecimal
+    }
+}
+
+' ===================================
+' SUPPORT ENTITIES PACKAGE
+' ===================================
+package "Support System" {
+    class Ticket <<Support>> {
+        -id: Long
+        -order: Order
+        -customer: Customer
+        -assignedStaff: Staff
+        -subject: String
+        -status: String
+        -createdAt: LocalDateTime
+        -closedAt: LocalDateTime
+        -messages: List<TicketMessage>
+        -customerName: String
+        -assignedStaffName: String
+        +addMessage(msg: TicketMessage): void
+    }
+
+    class TicketMessage <<Support>> {
+        -id: Long
+        -ticket: Ticket
+        -content: String
+        -timestamp: LocalDateTime
+        -isFromStaff: boolean
+        -customer: Customer
+        -staff: Staff
+        -ticketId: Long
+        -customerName: String
+        -staffName: String
+    }
+}
+
+' ===================================
+' SYSTEM ENTITIES PACKAGE
+' ===================================
+package "System & Audit" {
+    class AuditLog <<System>> {
+        -id: Long
+        -adminUsername: String
+        -action: String
+        -resourceType: String
+        -resourceId: Long
+        -targetUserId: Long
+        -details: String
+        -ipAddress: String
+        -userAgent: String
+        -success: Boolean
+        -errorMessage: String
+        -timestamp: LocalDateTime
+        -sessionId: String
+        -severity: AuditSeverity
+    }
+
+    enum AuditSeverity {
+        LOW
+        MEDIUM
+        HIGH
+        CRITICAL
+    }
+}
+
+' ===================================
+' SERVICE LAYER
+' ===================================
+package "Service Layer" {
+    class CustomerService {
+        -customerRepository
+        -passwordEncoder
+        +createCustomer(request): Customer
+        +getCustomerByUsername(username): Customer
+        +updateCustomer(customer): Customer
+    }
+
+    class ArtistService {
+        -artistRepository
+        -passwordEncoder
+        +createArtist(request): Artist
+        +getArtistByUsername(username): Artist
+        +updateProfile(username, details): Artist
+    }
+
+    class MusicService {
+        -musicRepository
+        -fileStorageService
+        +uploadMusic(title, genre, price, ...): Music
+        +getAllMusic(): List<Music>
+        +getMusicById(id): Optional<Music>
+        +getMusicByArtist(username): List<Music>
+        +searchMusic(query): List<Music>
+        +flagMusic(musicId, customerId,\n  reason): void
+        +unflagMusic(musicId): void
+        +deleteMusic(id): void
+    }
+
+    class CartService {
+        -cartRepository
+        -cartItemRepository
+        -musicRepository
+        +getOrCreateCart(customer): Cart
+        +addToCart(customer, musicId): CartItem
+        +removeItem(customer, itemId): void
+        +clearCart(customer): void
+        +calculateTotal(cart): BigDecimal
+    }
+
+    class OrderService {
+        -orderRepository
+        -cartService
+        +createOrderFromCart(customer,\n  paymentMethod): Order
+        +getOrderById(id): Optional<Order>
+        +getOrdersByCustomer(customer): List<Order>
+        +refundOrder(orderId): void
+        +getTodayRevenue(): BigDecimal
+    }
+
+    class ReviewService {
+        -reviewRepository
+        -musicRepository
+        +createReview(musicId, customer,\n  rating, comment): Review
+        +updateReview(reviewId, customer,\n  rating, comment): Review
+        +deleteReview(reviewId, customer): void
+        +getReviewsByMusic(musicId,\n  pageable): Page<Review>
+        +recalculateRating(musicId): void
+    }
+
+    class PlaylistService {
+        -playlistRepository
+        -musicRepository
+        +createPlaylist(username, request): Playlist
+        +addMusicToPlaylist(playlistId,\n  musicId, username): Playlist
+        +removeMusicFromPlaylist(playlistId,\n  musicId, username): Playlist
+        +getPlaylistById(id): Optional<Playlist>
+        +deletePlaylist(id, username): void
+    }
+
+    class TicketService {
+        -ticketRepository
+        -ticketMessageRepository
+        +createTicket(customer, subject,\n  message): Ticket
+        +addMessage(ticketId, content,\n  isFromStaff, user): TicketMessage
+        +assignTicket(ticketId, staffId): Ticket
+        +updateStatus(ticketId, status): Ticket
+        +getTicketMessages(ticketId): List
+    }
+
+    class AdminService {
+        -adminRepository
+        -auditLogService
+        +createAdmin(request): Admin
+        +getAdminByUsername(username): Admin
+        +performSystemAction(action): void
+    }
+
+    class AuditLogService {
+        -auditLogRepository
+        +logAdminAction(username, action,\n  resourceType, ...): AuditLog
+        +logFailedAdminAction(username,\n  action, resourceType, ...): AuditLog
+        +getAuditLogs(pageable): Page
+    }
+
+    class FileStorageService {
+        -uploadDir: String
+        +storeFile(file, directory): String
+        +loadFile(filename): Resource
+        +deleteFile(filename): void
+    }
+
+    class EmailSender {
+        -mailSender
+        +sendEmail(to, subject, body): void
+        +sendOrderConfirmation(order): void
+    }
+}
+
+' ===================================
+' CONTROLLER LAYER
+' ===================================
+package "API Controllers" {
+    class AuthApiController {
+        -customerService
+        -artistService
+        -jwtUtil
+        +login(request): ResponseEntity
+        +register(request): ResponseEntity
+    }
+
+    class MusicApiController {
+        -musicService
+        +getAllMusic(page, size): ResponseEntity
+        +getMusicById(id): ResponseEntity
+        +searchMusic(query): ResponseEntity
+        +flagMusic(musicId, request): ResponseEntity
+    }
+
+    class ArtistApiController {
+        -musicService
+        +uploadMusic(files, details): ResponseEntity
+        +getMyMusic(username): ResponseEntity
+        +updateMusic(id, details): ResponseEntity
+        +deleteMusic(id): ResponseEntity
+    }
+
+    class CartApiController {
+        -cartService
+        +getCart(customer): ResponseEntity
+        +addToCart(musicId, customer): ResponseEntity
+        +removeFromCart(itemId, customer): ResponseEntity
+        +checkout(customer): ResponseEntity
+    }
+
+    class CustomerApiController {
+        -orderService
+        -ticketService
+        -reviewService
+        +getPurchasedMusic(customer): ResponseEntity
+        +createTicket(request, customer): ResponseEntity
+        +getMyOrders(customer): ResponseEntity
+        +createReview(musicId, request): ResponseEntity
+    }
+
+    class PlaylistApiController {
+        -playlistService
+        +createPlaylist(request): ResponseEntity
+        +getPlaylists(username): ResponseEntity
+        +addMusicToPlaylist(playlistId,\n  musicId): ResponseEntity
+        +removeMusicFromPlaylist(playlistId,\n  musicId): ResponseEntity
+    }
+
+    class ReviewApiController {
+        -reviewService
+        +createReview(musicId, request): ResponseEntity
+        +updateReview(reviewId, request): ResponseEntity
+        +deleteReview(reviewId): ResponseEntity
+        +getReviewsForMusic(musicId,\n  pageable): ResponseEntity
+    }
+
+    class StaffApiController {
+        -ticketService
+        +getAllTickets(status): ResponseEntity
+        +getTicketById(ticketId): ResponseEntity
+        +replyToTicket(ticketId, request): ResponseEntity
+        +assignTicket(ticketId, staffId): ResponseEntity
+        +updateTicketStatus(ticketId,\n  request): ResponseEntity
+    }
+
+    class AdminApiController {
+        -unifiedUserService
+        -musicService
+        -orderService
+        -auditLogService
+        +createUser(request): ResponseEntity
+        +getAllUsers(page, size, role): ResponseEntity
+        +updateUserStatus(userId, enabled): ResponseEntity
+        +getFlaggedMusic(): ResponseEntity
+        +unflagMusic(musicId): ResponseEntity
+        +refundOrder(orderId): ResponseEntity
+        +getAnalytics(): ResponseEntity
+    }
+}
+
+' ===================================
+' RELATIONSHIPS - USER ENTITIES
+' ===================================
+UserDetails <|.. Customer
+UserDetails <|.. Artist
+UserDetails <|.. Admin
+UserDetails <|.. Staff
+
+Customer "1" -- "1" Cart : has
+Customer "1" -- "*" Order : places
+Customer "1" -- "*" Review : writes
+Customer "1" -- "*" Playlist : creates
+Customer "1" -- "*" Ticket : creates
+Customer "*" -- "*" Music : purchases
+
+Artist "1" -- "0..*" Music : uploads
+
+' ===================================
+' RELATIONSHIPS - MUSIC ENTITIES
+' ===================================
+Music "*" -- "1" Album : belongs to
+Music "1" -- "*" Review : has
+Music "*" -- "*" Playlist : included in
+Music "1" -- "*" CartItem : in
+Music "1" -- "*" OrderItem : in
+
+' ===================================
+' RELATIONSHIPS - COMMERCE
+' ===================================
+Cart "1" -- "*" CartItem : contains
+Order "1" -- "*" OrderItem : contains
+Order -- OrderStatus
+
+' ===================================
+' RELATIONSHIPS - SUPPORT
+' ===================================
+Ticket "*" -- "1" Customer : created by
+Ticket "*" -- "0..1" Staff : assigned to
+Ticket "*" -- "0..1" Order : related to
+Ticket "1" -- "*" TicketMessage : contains
+TicketMessage "*" -- "0..1" Customer : from
+TicketMessage "*" -- "0..1" Staff : from
+
+' ===================================
+' RELATIONSHIPS - SYSTEM
+' ===================================
+AuditLog -- AuditSeverity
+
+' ===================================
+' RELATIONSHIPS - SERVICES TO ENTITIES
+' ===================================
+CustomerService ..> Customer : manages
+ArtistService ..> Artist : manages
+MusicService ..> Music : manages
+CartService ..> Cart : manages
+OrderService ..> Order : manages
+ReviewService ..> Review : manages
+PlaylistService ..> Playlist : manages
+TicketService ..> Ticket : manages
+AdminService ..> Admin : manages
+AuditLogService ..> AuditLog : manages
+FileStorageService ..> Music : stores files
+
+' ===================================
+' RELATIONSHIPS - CONTROLLERS TO SERVICES
+' ===================================
+AuthApiController ..> CustomerService : uses
+AuthApiController ..> ArtistService : uses
+MusicApiController ..> MusicService : uses
+ArtistApiController ..> MusicService : uses
+CartApiController ..> CartService : uses
+CustomerApiController ..> OrderService : uses
+CustomerApiController ..> TicketService : uses
+CustomerApiController ..> ReviewService : uses
+PlaylistApiController ..> PlaylistService : uses
+ReviewApiController ..> ReviewService : uses
+StaffApiController ..> TicketService : uses
+AdminApiController ..> MusicService : uses
+AdminApiController ..> OrderService : uses
+AdminApiController ..> AuditLogService : uses
+
+@enduml

@@ -1,0 +1,102 @@
+@startuml Admin Functionality Activity Diagram
+title Music Store - Admin Key Functionalities
+
+start
+
+:Admin Logs into System;
+
+:View Admin Dashboard;
+
+repeat
+  :Select Admin Operation;
+
+  split
+    -> Ban User;
+    :View User List;
+    :Select User to Ban;
+    :Confirm Ban Action;
+    switch ()
+    case ( yes )
+      :Update User Status to Disabled;
+      :Log Action in Audit Log;
+      :Display Success Message;
+    case ( no )
+      :Cancel Operation;
+    endswitch
+
+  split again
+    -> Content Moderation;
+    :View Flagged Content List;
+    :Select Flagged Music;
+    :Review Content Details;
+    switch ()
+    case ( Delete Music )
+      :Remove Music from Database;
+      :Delete Associated Files;
+      :Notify Artist via Email;
+      :Log Action in Audit Log;
+      :Display Deletion Confirmation;
+    case ( Unflag Music )
+      :Remove Flag Status;
+      :Log Action in Audit Log;
+      :Display Unflag Confirmation;
+    endswitch
+
+  split again
+    -> View Analytics;
+    :Select Analytics Type;
+    switch ()
+    case ( System Overview )
+      :Fetch Total Users Count;
+      :Fetch Total Music Count;
+      :Fetch Total Orders Count;
+      :Calculate Total Revenue;
+      :Display System Overview Dashboard;
+    case ( Sales Analytics )
+      :Fetch Sales Data;
+      :Calculate Revenue Trends;
+      :Get Top Selling Music;
+      :Display Sales Reports;
+    case ( User Analytics )
+      :Fetch User Growth Data;
+      :Calculate User Statistics;
+      :Display User Analytics;
+    endswitch
+
+  split again
+    -> Assign Tickets;
+    :View All Support Tickets;
+    :Filter Unassigned Tickets;
+    :Select Ticket;
+    :Choose Staff Member;
+    :Assign Ticket to Staff;
+    :Send Notification to Staff;
+    :Log Action in Audit Log;
+    :Display Assignment Confirmation;
+
+  split again
+    -> System Shutdown;
+    :Request Server Shutdown;
+    :Set Shutdown Delay (minutes);
+    :Confirm Shutdown;
+    switch ()
+    case ( yes )
+      :Notify All Active Users;
+      :Wait for Delay Period;
+      :Save All System Data;
+      :Initiate Graceful Shutdown;
+      stop
+    case ( no )
+      :Cancel Shutdown;
+    endswitch
+
+  end split
+
+repeat while (Continue Admin Tasks?) is (yes)
+-> no;
+
+:Logout from System;
+
+stop
+
+@enduml

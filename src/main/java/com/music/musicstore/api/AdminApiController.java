@@ -65,6 +65,9 @@ public class AdminApiController {
     @Autowired
     private EmailSender emailSender;
 
+    @Autowired
+    private RefundService refundService;
+
     // User Management
     @PostMapping("/users/create")
     public ResponseEntity<?> createUser(@Valid @RequestBody UnifiedRegisterRequest request,
@@ -576,6 +579,231 @@ public class AdminApiController {
 
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to refund order: " + e.getMessage()));
+        }
+    }
+
+    // Refund Request Management
+    @GetMapping("/refunds")
+    public ResponseEntity<?> getAllRefundRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting refund requests - page: {}, size: {}, status: {}",
+                    currentUser.getUsername(), page, size, status);
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_REFUND_REQUESTS",
+                "REFUND",
+                null,
+                String.format("Viewed refund requests list - page: %d, size: %d, status filter: %s", page, size, status),
+                httpRequest
+            );
+
+            org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size);
+
+            if (status != null) {
+                com.music.musicstore.models.order.RefundRequest.RefundStatus refundStatus =
+                    com.music.musicstore.models.order.RefundRequest.RefundStatus.valueOf(status.toUpperCase());
+                return ResponseEntity.ok(refundService.getRefundRequestsByStatus(refundStatus, pageable));
+            }
+
+            return ResponseEntity.ok(refundService.getAllRefundRequests(pageable));
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid refund status filter: {}", status);
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Invalid status. Valid values: PENDING, APPROVED, REJECTED"));
+        } catch (Exception e) {
+            logger.error("Error fetching refund requests: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch refund requests: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/refunds/pending")
+    public ResponseEntity<?> getPendingRefundRequests(
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting pending refund requests", currentUser.getUsername());
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_PENDING_REFUNDS",
+                "REFUND",
+                null,
+                "Viewed pending refund requests",
+                httpRequest
+            );
+
+            java.util.List<com.music.musicstore.models.order.RefundRequest> pendingRequests =
+                refundService.getPendingRefundRequests();
+
+            return ResponseEntity.ok(Map.of(
+                "refundRequests", pendingRequests,
+                "count", pendingRequests.size()
+            ));
+        } catch (Exception e) {
+            logger.error("Error fetching pending refund requests: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch pending refund requests: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/refunds/{refundId}")
+    public ResponseEntity<?> getRefundRequestById(
+            @PathVariable Long refundId,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_REFUND_REQUEST",
+                "REFUND",
+                refundId,
+                "Viewed refund request details",
+                httpRequest
+            );
+
+            com.music.musicstore.models.order.RefundRequest refundRequest =
+                refundService.getRefundRequestById(refundId);
+            return ResponseEntity.ok(refundRequest);
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch refund request: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/refunds/{refundId}/approve")
+    public ResponseEntity<?> approveRefund(
+            @PathVariable Long refundId,
+            @Valid @RequestBody com.music.musicstore.dto.RefundApprovalDto request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} approving refund request {}", currentUser.getUsername(), refundId);
+        try {
+            com.music.musicstore.models.order.RefundRequest refundRequest =
+                refundService.approveRefund(refundId, currentUser.getUsername(), request.getAdminNotes());
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "APPROVE_REFUND",
+                "REFUND",
+                refundId,
+                String.format("Approved refund request for order %d. Amount: %s. Notes: %s",
+                    refundRequest.getOrder().getId(),
+                    refundRequest.getRefundAmount(),
+                    request.getAdminNotes()),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully approved refund request {}", currentUser.getUsername(), refundId);
+            return ResponseEntity.ok(Map.of(
+                "message", "Refund approved successfully",
+                "refundRequest", refundRequest
+            ));
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Business rule violation when approving refund {}: {}", refundId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error approving refund request {}: {}", refundId, e.getMessage(), e);
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "APPROVE_REFUND",
+                "REFUND",
+                refundId,
+                e.getMessage(),
+                httpRequest
+            );
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to approve refund: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/refunds/{refundId}/reject")
+    public ResponseEntity<?> rejectRefund(
+            @PathVariable Long refundId,
+            @Valid @RequestBody com.music.musicstore.dto.RefundApprovalDto request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} rejecting refund request {}", currentUser.getUsername(), refundId);
+        try {
+            com.music.musicstore.models.order.RefundRequest refundRequest =
+                refundService.rejectRefund(refundId, currentUser.getUsername(), request.getAdminNotes());
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "REJECT_REFUND",
+                "REFUND",
+                refundId,
+                String.format("Rejected refund request for order %d. Notes: %s",
+                    refundRequest.getOrder().getId(),
+                    request.getAdminNotes()),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully rejected refund request {}", currentUser.getUsername(), refundId);
+            return ResponseEntity.ok(Map.of(
+                "message", "Refund rejected successfully",
+                "refundRequest", refundRequest
+            ));
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Business rule violation when rejecting refund {}: {}", refundId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error rejecting refund request {}: {}", refundId, e.getMessage(), e);
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "REJECT_REFUND",
+                "REFUND",
+                refundId,
+                e.getMessage(),
+                httpRequest
+            );
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to reject refund: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/refunds/statistics")
+    public ResponseEntity<?> getRefundStatistics(
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting refund statistics", currentUser.getUsername());
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_REFUND_STATISTICS",
+                "REFUND",
+                null,
+                "Viewed refund statistics",
+                httpRequest
+            );
+
+            long pendingCount = refundService.getPendingRefundCount();
+
+            Map<String, Object> statistics = new HashMap<>();
+            statistics.put("pendingRefunds", pendingCount);
+            statistics.put("timestamp", LocalDateTime.now());
+
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            logger.error("Error fetching refund statistics: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch refund statistics: " + e.getMessage()));
         }
     }
 

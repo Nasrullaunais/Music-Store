@@ -1,0 +1,44 @@
+@startuml
+actor Admin
+participant "Web UI" as UI
+participant "Backend Controller" as Controller
+participant "Service Layer" as Service
+participant "Database" as DB
+participant "Audit Log" as Audit
+
+Admin -> UI: Login / Perform admin action
+UI -> Controller: Send login/action request
+Controller -> Service: Validate credentials/role
+Service -> DB: Query admin user / user data
+DB --> Service: Return user data
+Service -> Audit: Log admin action
+Audit --> Service: Confirm log entry
+Service -> Controller: Processed result
+Controller -> UI: Response (success/failure)
+UI -> Admin: Show result
+
+alt Create User
+    Admin -> UI: Enter new user details
+    UI -> Controller: Submit create user request
+    Controller -> Service: Validate & create user
+    Service -> DB: Insert new user
+    DB --> Service: Confirm creation
+    Service -> Audit: Log user creation
+    Audit --> Service: Confirm log
+    Service -> Controller: Success
+    Controller -> UI: Show success
+    UI -> Admin: Show confirmation
+end
+
+alt View Analytics
+    Admin -> UI: Request analytics
+    UI -> Controller: Send analytics request
+    Controller -> Service: Fetch analytics data
+    Service -> DB: Query analytics
+    DB --> Service: Return analytics
+    Service -> Controller: Analytics data
+    Controller -> UI: Show analytics
+    UI -> Admin: Display analytics
+end
+@enduml
+

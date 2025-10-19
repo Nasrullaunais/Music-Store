@@ -1,0 +1,542 @@
+@startuml Music Store Use Case Diagram
+left to right direction
+skinparam packageStyle rectangle
+
+actor Guest as guest
+actor Customer as customer
+actor Artist as artist
+actor Staff as staff
+actor Admin as admin
+
+rectangle "Music Store System" {
+
+  ' Authentication & Registration
+  package "Authentication" {
+    usecase (Login) as UC1
+    usecase (Register Account) as UC2
+    usecase (Logout) as UC3
+  }
+
+  ' Music Browsing & Discovery
+  package "Music Browsing" {
+    usecase (Browse Music Catalog) as UC4
+    usecase (Search Music) as UC5
+    usecase (View Music Details) as UC@startuml Music Store Use Case Diagram
+left to right direction
+skinparam packageStyle rectangle
+
+actor Guest as guest
+actor Customer as customer
+actor Artist as artist
+actor Staff as staff
+actor Admin as admin
+
+rectangle "Music Store System" {
+
+  ' Authentication & Registration
+  package "Authentication" {
+    usecase (Login) as UC1
+    usecase (Register Account) as UC2
+    usecase (Logout) as UC3
+  }
+
+  ' Music Browsing & Discovery
+  package "Music Browsing" {
+    usecase (Browse Music Catalog) as UC4
+    usecase (Search Music) as UC5
+    usecase (View Music Details) as UC6
+    usecase (Filter by Genre) as UC7
+    usecase (Filter by Artist) as UC8
+    usecase (View Featured Music) as UC9
+  }
+
+  ' Customer Features
+  package "Shopping & Purchase" {
+    usecase (Add to Cart) as UC10
+    usecase (View Cart) as UC11
+    usecase (Remove from Cart) as UC12
+    usecase (Clear Cart) as UC13
+    usecase (Checkout) as UC14
+    usecase (View Orders) as UC15
+    usecase (View Order Details) as UC16
+    usecase (Download Purchased Music) as UC17
+    usecase (Stream Purchased Music) as UC18
+  }
+
+  ' Review System
+  package "Reviews & Ratings" {
+    usecase (Write Review) as UC19
+    usecase (Update Review) as UC20
+    usecase (Delete Review) as UC21
+    usecase (View Reviews) as UC22
+    usecase (Rate Music) as UC23
+  }
+
+  ' Playlist Management
+  package "Playlist Management" {
+    usecase (Create Playlist) as UC24
+    usecase (View Playlists) as UC25
+    usecase (Add Music to Playlist) as UC26
+    usecase (Remove Music from Playlist) as UC27
+    usecase (Delete Playlist) as UC28
+    usecase (Update Playlist) as UC29
+  }
+
+  ' Support System
+  package "Customer Support" {
+    usecase (Create Support Ticket) as UC30
+    usecase (View My Tickets) as UC31
+    usecase (Add Message to Ticket) as UC32
+    usecase (View Ticket Conversation) as UC33
+    usecase (Flag Inappropriate Music) as UC34
+  }
+
+  ' Artist Features
+  package "Music Management (Artist)" {
+    usecase (Upload Music) as UC35
+    usecase (Update Music Details) as UC36
+    usecase (Delete Music) as UC37
+    usecase (View My Music) as UC38
+    usecase (View Music Analytics) as UC39
+    usecase (View Sales Statistics) as UC40
+    usecase (View Revenue Report) as UC41
+    usecase (View Music Reviews) as UC42
+  }
+
+  package "Artist Dashboard" {
+    usecase (View Dashboard) as UC43
+    usecase (View Total Earnings) as UC44
+    usecase (View Music Performance) as UC45
+  }
+
+  ' Staff Features
+  package "Ticket Management (Staff)" {
+    usecase (View All Tickets) as UC46
+    usecase (View Assigned Tickets) as UC47
+    usecase (Reply to Ticket) as UC48
+    usecase (Update Ticket Status) as UC49
+    usecase (View Urgent Tickets) as UC50
+    usecase (View Unassigned Tickets) as UC51
+    usecase (Assign Ticket) as UC52
+  }
+
+  ' Admin Features
+  package "User Management (Admin)" {
+    usecase (Create User) as UC53
+    usecase (View All Users) as UC54
+    usecase (Update User) as UC55
+    usecase (Delete User) as UC56
+    usecase (Enable/Disable User) as UC57
+    usecase (Filter Users by Role) as UC58
+  }
+
+  package "Content Moderation (Admin)" {
+    usecase (View Flagged Music) as UC59
+    usecase (Review Flagged Content) as UC60
+    usecase (Delete Flagged Music) as UC61
+    usecase (Unflag Music) as UC62
+    usecase (Moderate Reviews) as UC63
+    usecase (Delete Review) as UC64
+  }
+
+  package "Order Management (Admin)" {
+    usecase (View All Orders) as UC65
+    usecase (Filter Orders by Status) as UC66
+    usecase (Process Refund) as UC67
+    usecase (View Order Analytics) as UC68
+  }
+
+  package "Analytics & Reports (Admin)" {
+    usecase (View System Overview) as UC69
+    usecase (View User Analytics) as UC70
+    usecase (View Sales Analytics) as UC71
+    usecase (View Revenue Reports) as UC72
+    usecase (View Music Performance) as UC73
+    usecase (View Server Statistics) as UC74
+    usecase (View Audit Logs) as UC75
+  }
+
+  package "System Administration (Admin)" {
+    usecase (Manage System Settings) as UC76
+    usecase (Initiate Backup) as UC77
+    usecase (Shutdown Server) as UC78
+    usecase (Monitor System Health) as UC79
+    usecase (Create Staff Account) as UC80
+    usecase (Create Admin Account) as UC81
+  }
+
+  package "Email Management (Admin)" {
+    usecase (Send Promotional Emails) as UC82
+    usecase (Send System Notifications) as UC83
+  }
+}
+
+' Guest relationships
+guest --> UC1
+guest --> UC2
+guest --> UC4
+guest --> UC5
+guest --> UC6
+guest --> UC7
+guest --> UC8
+guest --> UC9
+guest --> UC22
+
+' Customer relationships
+customer --> UC1
+customer --> UC3
+customer --> UC4
+customer --> UC5
+customer --> UC6
+customer --> UC7
+customer --> UC8
+customer --> UC9
+customer --> UC10
+customer --> UC11
+customer --> UC12
+customer --> UC13
+customer --> UC14
+customer --> UC15
+customer --> UC16
+customer --> UC17
+customer --> UC18
+customer --> UC19
+customer --> UC20
+customer --> UC21
+customer --> UC22
+customer --> UC23
+customer --> UC24
+customer --> UC25
+customer --> UC26
+customer --> UC27
+customer --> UC28
+customer --> UC29
+customer --> UC30
+customer --> UC31
+customer --> UC32
+customer --> UC33
+customer --> UC34
+
+' Artist relationships
+artist --> UC1
+artist --> UC3
+artist --> UC35
+artist --> UC36
+artist --> UC37
+artist --> UC38
+artist --> UC39
+artist --> UC40
+artist --> UC41
+artist --> UC42
+artist --> UC43
+artist --> UC44
+artist --> UC45
+
+' Staff relationships
+staff --> UC1
+staff --> UC3
+staff --> UC46
+staff --> UC47
+staff --> UC48
+staff --> UC49
+staff --> UC50
+staff --> UC51
+staff --> UC52
+
+' Admin relationships (inherits all capabilities)
+admin --> UC1
+admin --> UC3
+admin --> UC53
+admin --> UC54
+admin --> UC55
+admin --> UC56
+admin --> UC57
+admin --> UC58
+admin --> UC59
+admin --> UC60
+admin --> UC61
+admin --> UC62
+admin --> UC63
+admin --> UC64
+admin --> UC65
+admin --> UC66
+admin --> UC67
+admin --> UC68
+admin --> UC69
+admin --> UC70
+admin --> UC71
+admin --> UC72
+admin --> UC73
+admin --> UC74
+admin --> UC75
+admin --> UC76
+admin --> UC77
+admin --> UC78
+admin --> UC79
+admin --> UC80
+admin --> UC81
+admin --> UC82
+admin --> UC83
+
+' Include relationships
+UC14 ..> UC11 : <<include>>
+UC17 ..> UC15 : <<include>>
+UC18 ..> UC15 : <<include>>
+UC19 ..> UC17 : <<include>>
+UC32 ..> UC30 : <<include>>
+UC48 ..> UC46 : <<include>>
+
+' Extend relationships
+UC34 ..> UC6 : <<extend>>
+UC23 ..> UC19 : <<extend>>
+
+@enduml
+
+6
+    usecase (Filter by Genre) as UC7
+    usecase (Filter by Artist) as UC8
+    usecase (View Featured Music) as UC9
+  }
+
+  ' Customer Features
+  package "Shopping & Purchase" {
+    usecase (Add to Cart) as UC10
+    usecase (View Cart) as UC11
+    usecase (Remove from Cart) as UC12
+    usecase (Clear Cart) as UC13
+    usecase (Checkout) as UC14
+    usecase (View Orders) as UC15
+    usecase (View Order Details) as UC16
+    usecase (Download Purchased Music) as UC17
+    usecase (Stream Purchased Music) as UC18
+  }
+
+  ' Review System
+  package "Reviews & Ratings" {
+    usecase (Write Review) as UC19
+    usecase (Update Review) as UC20
+    usecase (Delete Review) as UC21
+    usecase (View Reviews) as UC22
+    usecase (Rate Music) as UC23
+  }
+
+  ' Playlist Management
+  package "Playlist Management" {
+    usecase (Create Playlist) as UC24
+    usecase (View Playlists) as UC25
+    usecase (Add Music to Playlist) as UC26
+    usecase (Remove Music from Playlist) as UC27
+    usecase (Delete Playlist) as UC28
+    usecase (Update Playlist) as UC29
+  }
+
+  ' Support System
+  package "Customer Support" {
+    usecase (Create Support Ticket) as UC30
+    usecase (View My Tickets) as UC31
+    usecase (Add Message to Ticket) as UC32
+    usecase (View Ticket Conversation) as UC33
+    usecase (Flag Inappropriate Music) as UC34
+  }
+
+  ' Artist Features
+  package "Music Management (Artist)" {
+    usecase (Upload Music) as UC35
+    usecase (Update Music Details) as UC36
+    usecase (Delete Music) as UC37
+    usecase (View My Music) as UC38
+    usecase (View Music Analytics) as UC39
+    usecase (View Sales Statistics) as UC40
+    usecase (View Revenue Report) as UC41
+    usecase (View Music Reviews) as UC42
+  }
+
+  package "Artist Dashboard" {
+    usecase (View Dashboard) as UC43
+    usecase (View Total Earnings) as UC44
+    usecase (View Music Performance) as UC45
+  }
+
+  ' Staff Features
+  package "Ticket Management (Staff)" {
+    usecase (View All Tickets) as UC46
+    usecase (View Assigned Tickets) as UC47
+    usecase (Reply to Ticket) as UC48
+    usecase (Update Ticket Status) as UC49
+    usecase (View Urgent Tickets) as UC50
+    usecase (View Unassigned Tickets) as UC51
+    usecase (Assign Ticket) as UC52
+  }
+
+  ' Admin Features
+  package "User Management (Admin)" {
+    usecase (Create User) as UC53
+    usecase (View All Users) as UC54
+    usecase (Update User) as UC55
+    usecase (Delete User) as UC56
+    usecase (Enable/Disable User) as UC57
+    usecase (Filter Users by Role) as UC58
+  }
+
+  package "Content Moderation (Admin)" {
+    usecase (View Flagged Music) as UC59
+    usecase (Review Flagged Content) as UC60
+    usecase (Delete Flagged Music) as UC61
+    usecase (Unflag Music) as UC62
+    usecase (Moderate Reviews) as UC63
+    usecase (Delete Review) as UC64
+  }
+
+  package "Order Management (Admin)" {
+    usecase (View All Orders) as UC65
+    usecase (Filter Orders by Status) as UC66
+    usecase (Process Refund) as UC67
+    usecase (View Order Analytics) as UC68
+  }
+
+  package "Analytics & Reports (Admin)" {
+    usecase (View System Overview) as UC69
+    usecase (View User Analytics) as UC70
+    usecase (View Sales Analytics) as UC71
+    usecase (View Revenue Reports) as UC72
+    usecase (View Music Performance) as UC73
+    usecase (View Server Statistics) as UC74
+    usecase (View Audit Logs) as UC75
+  }
+
+  package "System Administration (Admin)" {
+    usecase (Manage System Settings) as UC76
+    usecase (Initiate Backup) as UC77
+    usecase (Shutdown Server) as UC78
+    usecase (Monitor System Health) as UC79
+    usecase (Create Staff Account) as UC80
+    usecase (Create Admin Account) as UC81
+  }
+
+  package "Email Management (Admin)" {
+    usecase (Send Promotional Emails) as UC82
+    usecase (Send System Notifications) as UC83
+  }
+}
+
+' Guest relationships
+guest --> UC1
+guest --> UC2
+guest --> UC4
+guest --> UC5
+guest --> UC6
+guest --> UC7
+guest --> UC8
+guest --> UC9
+guest --> UC22
+
+' Customer relationships
+customer --> UC1
+customer --> UC3
+customer --> UC4
+customer --> UC5
+customer --> UC6
+customer --> UC7
+customer --> UC8
+customer --> UC9
+customer --> UC10
+customer --> UC11
+customer --> UC12
+customer --> UC13
+customer --> UC14
+customer --> UC15
+customer --> UC16
+customer --> UC17
+customer --> UC18
+customer --> UC19
+customer --> UC20
+customer --> UC21
+customer --> UC22
+customer --> UC23
+customer --> UC24
+customer --> UC25
+customer --> UC26
+customer --> UC27
+customer --> UC28
+customer --> UC29
+customer --> UC30
+customer --> UC31
+customer --> UC32
+customer --> UC33
+customer --> UC34
+
+' Artist relationships
+artist --> UC1
+artist --> UC3
+artist --> UC35
+artist --> UC36
+artist --> UC37
+artist --> UC38
+artist --> UC39
+artist --> UC40
+artist --> UC41
+artist --> UC42
+artist --> UC43
+artist --> UC44
+artist --> UC45
+
+' Staff relationships
+staff --> UC1
+staff --> UC3
+staff --> UC46
+staff --> UC47
+staff --> UC48
+staff --> UC49
+staff --> UC50
+staff --> UC51
+staff --> UC52
+
+' Admin relationships (inherits all capabilities)
+admin --> UC1
+admin --> UC3
+admin --> UC53
+admin --> UC54
+admin --> UC55
+admin --> UC56
+admin --> UC57
+admin --> UC58
+admin --> UC59
+admin --> UC60
+admin --> UC61
+admin --> UC62
+admin --> UC63
+admin --> UC64
+admin --> UC65
+admin --> UC66
+admin --> UC67
+admin --> UC68
+admin --> UC69
+admin --> UC70
+admin --> UC71
+admin --> UC72
+admin --> UC73
+admin --> UC74
+admin --> UC75
+admin --> UC76
+admin --> UC77
+admin --> UC78
+admin --> UC79
+admin --> UC80
+admin --> UC81
+admin --> UC82
+admin --> UC83
+
+' Include relationships
+UC14 ..> UC11 : <<include>>
+UC17 ..> UC15 : <<include>>
+UC18 ..> UC15 : <<include>>
+UC19 ..> UC17 : <<include>>
+UC32 ..> UC30 : <<include>>
+UC48 ..> UC46 : <<include>>
+
+' Extend relationships
+UC34 ..> UC6 : <<extend>>
+UC23 ..> UC19 : <<extend>>
+
+@enduml
+

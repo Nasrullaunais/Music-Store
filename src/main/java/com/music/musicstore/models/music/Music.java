@@ -78,6 +78,16 @@ public class Music {
     @Column(name = "flagged_by_customer_id")
     private Long flaggedByCustomerId;
 
+    // Soft delete fields
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
+
 
     // Default constructor required by JPA
     public Music() {
@@ -155,6 +165,15 @@ public class Music {
 
     public Long getFlaggedByCustomerId() { return flaggedByCustomerId; }
     public void setFlaggedByCustomerId(Long flaggedByCustomerId) { this.flaggedByCustomerId = flaggedByCustomerId; }
+
+    public Boolean getIsDeleted() { return isDeleted; }
+    public void setDeleted(Boolean deleted) { this.isDeleted = deleted; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public String getDeletedBy() { return deletedBy; }
+    public void setDeletedBy(String deletedBy) { this.deletedBy = deletedBy; }
 
     @PrePersist
     protected void onCreate() {
