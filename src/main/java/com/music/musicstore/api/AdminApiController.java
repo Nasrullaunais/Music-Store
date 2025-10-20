@@ -68,6 +68,12 @@ public class AdminApiController {
     @Autowired
     private RefundService refundService;
 
+    @Autowired
+    private BanService banService;
+
+    @Autowired
+    private SalesReportService salesReportService;
+
     // User Management
     @PostMapping("/users/create")
     public ResponseEntity<?> createUser(@Valid @RequestBody UnifiedRegisterRequest request,
@@ -264,6 +270,341 @@ public class AdminApiController {
 
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to update user status: " + e.getMessage()));
+        }
+    }
+
+    // Ban Management
+    @PostMapping("/customers/{customerId}/ban")
+    public ResponseEntity<?> banCustomer(
+            @PathVariable Long customerId,
+            @Valid @RequestBody com.music.musicstore.dto.BanUserRequest request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} attempting to ban customer ID: {}", currentUser.getUsername(), customerId);
+        try {
+            com.music.musicstore.dto.BanUserResponse response = banService.banCustomer(
+                customerId,
+                request.getReason(),
+                request.getDurationInHours(),
+                currentUser.getUsername()
+            );
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "BAN_CUSTOMER",
+                "CUSTOMER",
+                customerId,
+                String.format("Banned customer for %d hours. Reason: %s",
+                    request.getDurationInHours(), request.getReason()),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully banned customer ID: {}", currentUser.getUsername(), customerId);
+            return ResponseEntity.ok(response);
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Business rule violation when banning customer {}: {}", customerId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error banning customer {}: {}", customerId, e.getMessage(), e);
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "BAN_CUSTOMER",
+                "CUSTOMER",
+                customerId,
+                e.getMessage(),
+                httpRequest
+            );
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to ban customer: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/artists/{artistId}/ban")
+    public ResponseEntity<?> banArtist(
+            @PathVariable Long artistId,
+            @Valid @RequestBody com.music.musicstore.dto.BanUserRequest request,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} attempting to ban artist ID: {}", currentUser.getUsername(), artistId);
+        try {
+            com.music.musicstore.dto.BanUserResponse response = banService.banArtist(
+                artistId,
+                request.getReason(),
+                request.getDurationInHours(),
+                currentUser.getUsername()
+            );
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "BAN_ARTIST",
+                "ARTIST",
+                artistId,
+                String.format("Banned artist for %d hours. Reason: %s",
+                    request.getDurationInHours(), request.getReason()),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully banned artist ID: {}", currentUser.getUsername(), artistId);
+            return ResponseEntity.ok(response);
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Business rule violation when banning artist {}: {}", artistId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error banning artist {}: {}", artistId, e.getMessage(), e);
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "BAN_ARTIST",
+                "ARTIST",
+                artistId,
+                e.getMessage(),
+                httpRequest
+            );
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to ban artist: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/customers/{customerId}/ban")
+    public ResponseEntity<?> unbanCustomer(
+            @PathVariable Long customerId,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} attempting to unban customer ID: {}", currentUser.getUsername(), customerId);
+        try {
+            com.music.musicstore.dto.BanUserResponse response = banService.unbanCustomer(
+                customerId,
+                currentUser.getUsername()
+            );
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UNBAN_CUSTOMER",
+                "CUSTOMER",
+                customerId,
+                "Unbanned customer",
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully unbanned customer ID: {}", currentUser.getUsername(), customerId);
+            return ResponseEntity.ok(response);
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Business rule violation when unbanning customer {}: {}", customerId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error unbanning customer {}: {}", customerId, e.getMessage(), e);
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UNBAN_CUSTOMER",
+                "CUSTOMER",
+                customerId,
+                e.getMessage(),
+                httpRequest
+            );
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to unban customer: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/artists/{artistId}/ban")
+    public ResponseEntity<?> unbanArtist(
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} attempting to unban artist ID: {}", currentUser.getUsername(), artistId);
+        try {
+            com.music.musicstore.dto.BanUserResponse response = banService.unbanArtist(
+                artistId,
+                currentUser.getUsername()
+            );
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "UNBAN_ARTIST",
+                "ARTIST",
+                artistId,
+                "Unbanned artist",
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully unbanned artist ID: {}", currentUser.getUsername(), artistId);
+            return ResponseEntity.ok(response);
+        } catch (com.music.musicstore.exceptions.BusinessRuleException e) {
+            logger.warn("Business rule violation when unbanning artist {}: {}", artistId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error unbanning artist {}: {}", artistId, e.getMessage(), e);
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "UNBAN_ARTIST",
+                "ARTIST",
+                artistId,
+                e.getMessage(),
+                httpRequest
+            );
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to unban artist: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/customers/{customerId}/ban-status")
+    public ResponseEntity<?> getCustomerBanStatus(
+            @PathVariable Long customerId,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_CUSTOMER_BAN_STATUS",
+                "CUSTOMER",
+                customerId,
+                "Viewed customer ban status",
+                httpRequest
+            );
+
+            com.music.musicstore.dto.BanUserResponse response = banService.getCustomerBanStatus(customerId);
+            return ResponseEntity.ok(response);
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch ban status: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/artists/{artistId}/ban-status")
+    public ResponseEntity<?> getArtistBanStatus(
+            @PathVariable Long artistId,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_ARTIST_BAN_STATUS",
+                "ARTIST",
+                artistId,
+                "Viewed artist ban status",
+                httpRequest
+            );
+
+            com.music.musicstore.dto.BanUserResponse response = banService.getArtistBanStatus(artistId);
+            return ResponseEntity.ok(response);
+        } catch (com.music.musicstore.exceptions.ResourceNotFoundException e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch ban status: " + e.getMessage()));
+        }
+    }
+
+    // Get All Banned Users Endpoints
+    @GetMapping("/banned-users")
+    public ResponseEntity<?> getAllBannedUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting all banned users - page: {}, size: {}",
+                    currentUser.getUsername(), page, size);
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_BANNED_USERS",
+                "USER",
+                null,
+                String.format("Viewed banned users list - page: %d, size: %d", page, size),
+                httpRequest
+            );
+
+            org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size);
+
+            org.springframework.data.domain.Page<com.music.musicstore.dto.BannedUserDto> bannedUsers =
+                banService.getAllBannedUsersPaginated(pageable);
+
+            logger.info("Admin {} successfully retrieved banned users list - total: {}",
+                        currentUser.getUsername(), bannedUsers.getTotalElements());
+            return ResponseEntity.ok(bannedUsers);
+        } catch (Exception e) {
+            logger.error("Error fetching banned users: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch banned users: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/banned-users/all")
+    public ResponseEntity<?> getAllBannedUsersNoPagination(
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting all banned users without pagination", currentUser.getUsername());
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_ALL_BANNED_USERS",
+                "USER",
+                null,
+                "Viewed complete banned users list",
+                httpRequest
+            );
+
+            java.util.List<com.music.musicstore.dto.BannedUserDto> bannedUsers =
+                banService.getAllBannedUsers();
+
+            logger.info("Admin {} successfully retrieved all banned users - total: {}",
+                        currentUser.getUsername(), bannedUsers.size());
+
+            return ResponseEntity.ok(Map.of(
+                "bannedUsers", bannedUsers,
+                "totalCount", bannedUsers.size(),
+                "timestamp", LocalDateTime.now()
+            ));
+        } catch (Exception e) {
+            logger.error("Error fetching all banned users: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch banned users: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/banned-users/statistics")
+    public ResponseEntity<?> getBannedUsersStatistics(
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting banned users statistics", currentUser.getUsername());
+        try {
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_BAN_STATISTICS",
+                "USER",
+                null,
+                "Viewed ban statistics",
+                httpRequest
+            );
+
+            Map<String, Object> statistics = banService.getBanStatistics();
+
+            logger.info("Admin {} successfully retrieved ban statistics", currentUser.getUsername());
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            logger.error("Error fetching ban statistics: {}", e.getMessage(), e);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to fetch ban statistics: " + e.getMessage()));
         }
     }
 
@@ -843,6 +1184,96 @@ public class AdminApiController {
             logger.error("Admin {} failed to retrieve system overview - Error: {}", currentUser.getUsername(), e.getMessage());
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Failed to fetch system overview: " + e.getMessage()));
+        }
+    }
+
+    // NEW: Monthly Sales Report PDF Download
+    @GetMapping("/reports/sales/monthly")
+    public ResponseEntity<?> downloadMonthlySalesReport(
+            @RequestParam int year,
+            @RequestParam int month,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting monthly sales report PDF for {}/{}",
+                    currentUser.getUsername(), year, month);
+        try {
+            // Generate PDF
+            byte[] pdfBytes = salesReportService.generateMonthlySalesPdf(year, month);
+
+            // Log the action
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "DOWNLOAD_SALES_REPORT",
+                "REPORT",
+                null,
+                String.format("Downloaded monthly sales report for %d/%d", year, month),
+                httpRequest
+            );
+
+            // Set headers for PDF download
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                org.springframework.http.ContentDisposition.builder("attachment")
+                    .filename(String.format("sales_report_%d_%02d.pdf", year, month))
+                    .build()
+            );
+            headers.setContentLength(pdfBytes.length);
+
+            logger.info("Admin {} successfully generated sales report PDF for {}/{}",
+                        currentUser.getUsername(), year, month);
+
+            return new ResponseEntity<>(pdfBytes, headers, org.springframework.http.HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Admin {} failed to generate sales report PDF for {}/{} - Error: {}",
+                        currentUser.getUsername(), year, month, e.getMessage(), e);
+
+            auditLogService.logFailedAdminAction(
+                currentUser.getUsername(),
+                "DOWNLOAD_SALES_REPORT",
+                "REPORT",
+                null,
+                String.format("Failed to generate sales report for %d/%d: %s", year, month, e.getMessage()),
+                httpRequest
+            );
+
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to generate sales report: " + e.getMessage()));
+        }
+    }
+
+    // NEW: Get Monthly Sales Data (JSON)
+    @GetMapping("/reports/sales/monthly/data")
+    public ResponseEntity<?> getMonthlySalesData(
+            @RequestParam int year,
+            @RequestParam int month,
+            @AuthenticationPrincipal UserDetails currentUser,
+            HttpServletRequest httpRequest) {
+        logger.info("Admin {} requesting monthly sales data for {}/{}",
+                    currentUser.getUsername(), year, month);
+        try {
+            com.music.musicstore.dto.MonthlySalesReportData reportData =
+                salesReportService.generateMonthlySalesData(year, month);
+
+            auditLogService.logAdminAction(
+                currentUser.getUsername(),
+                "VIEW_SALES_DATA",
+                "REPORT",
+                null,
+                String.format("Viewed monthly sales data for %d/%d", year, month),
+                httpRequest
+            );
+
+            logger.info("Admin {} successfully retrieved sales data for {}/{}",
+                        currentUser.getUsername(), year, month);
+
+            return ResponseEntity.ok(reportData);
+        } catch (Exception e) {
+            logger.error("Admin {} failed to retrieve sales data for {}/{} - Error: {}",
+                        currentUser.getUsername(), year, month, e.getMessage(), e);
+
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to retrieve sales data: " + e.getMessage()));
         }
     }
 

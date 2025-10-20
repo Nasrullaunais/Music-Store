@@ -6,12 +6,19 @@ import com.music.musicstore.dto.RegisterRequest;
 import com.music.musicstore.dto.UnifiedRegisterRequest;
 import com.music.musicstore.dto.AuthResponse;
 import com.music.musicstore.dto.UserDto;
+import com.music.musicstore.dto.BanErrorResponse;
+import com.music.musicstore.exceptions.UserBannedException;
+import com.music.musicstore.models.users.Customer;
+import com.music.musicstore.models.users.Artist;
+import com.music.musicstore.repositories.CustomerRepository;
+import com.music.musicstore.repositories.ArtistRepository;
 import com.music.musicstore.services.UnifiedUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +26,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,22 +38,31 @@ public class AuthApiController {
     private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
     private final UnifiedUserService unifiedUserService;
+    private final CustomerRepository customerRepository;
+    private final ArtistRepository artistRepository;
 
     @Autowired
     public AuthApiController(AuthenticationManager authenticationManager,
                            @Qualifier("combinedUserDetailsService") UserDetailsService userDetailsService,
                            JwtUtil jwtUtil,
-                           UnifiedUserService unifiedUserService) {
+                           UnifiedUserService unifiedUserService,
+                           CustomerRepository customerRepository,
+                           ArtistRepository artistRepository) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
         this.unifiedUserService = unifiedUserService;
+        this.customerRepository = customerRepository;
+        this.artistRepository = artistRepository;
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         System.out.println("Login request received: " + request.getUsername());
         try {
+            // Check if user is banned before attempting authentication
+            checkIfUserBanned(request.getUsername());
+
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
@@ -55,9 +73,47 @@ public class AuthApiController {
             UserDto userDto = unifiedUserService.getUserInfo(userDetails);
 
             return ResponseEntity.ok(new AuthResponse(token, userDto));
+        } catch (UserBannedException e) {
+            // User is banned - provide detailed error message
+            return ResponseEntity.status(403)
+                .body(new BanErrorResponse(e.getBanReason(), e.getBannedUntil()));
+        } catch (DisabledException e) {
+            // User is disabled but not banned
+            return ResponseEntity.status(403)
+                .body(new ErrorResponse("Your account has been disabled. Please contact support."));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new ErrorResponse("Invalid username or password"));
+        }
+    }
+
+    /**
+     * Check if the user is banned before authentication
+     */
+    private void checkIfUserBanned(String username) {
+        // Check if it's a customer
+        Optional<Customer> customerOpt = customerRepository.findByUsername(username);
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            if (customer.isBanned()) {
+                // Check if ban has expired
+                if (customer.getBannedUntil() != null && customer.getBannedUntil().isAfter(LocalDateTime.now())) {
+                    throw new UserBannedException(username, customer.getBanReason(), customer.getBannedUntil());
+                }
+            }
+            return;
+        }
+
+        // Check if it's an artist
+        Optional<Artist> artistOpt = artistRepository.findByUserName(username);
+        if (artistOpt.isPresent()) {
+            Artist artist = artistOpt.get();
+            if (artist.isBanned()) {
+                // Check if ban has expired
+                if (artist.getBannedUntil() != null && artist.getBannedUntil().isAfter(LocalDateTime.now())) {
+                    throw new UserBannedException(username, artist.getBanReason(), artist.getBannedUntil());
+                }
+            }
         }
     }
 

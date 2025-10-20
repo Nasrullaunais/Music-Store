@@ -58,6 +58,21 @@ public class Customer implements UserDetails {
     @Column(name = "created_at", nullable = true)
     private LocalDateTime createdAt;
 
+    @Column(name = "is_banned", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean isBanned;
+
+    @Column(name = "ban_reason")
+    private String banReason;
+
+    @Column(name = "banned_until")
+    private LocalDateTime bannedUntil;
+
+    @Column(name = "banned_by")
+    private String bannedBy;
+
+    @Column(name = "banned_at")
+    private LocalDateTime bannedAt;
+
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonIgnore  // This breaks the circular reference
     private Cart cart;
@@ -160,6 +175,46 @@ public class Customer implements UserDetails {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isBanned() {
+        return isBanned;
+    }
+
+    public void setBanned(boolean banned) {
+        isBanned = banned;
+    }
+
+    public String getBanReason() {
+        return banReason;
+    }
+
+    public void setBanReason(String banReason) {
+        this.banReason = banReason;
+    }
+
+    public LocalDateTime getBannedUntil() {
+        return bannedUntil;
+    }
+
+    public void setBannedUntil(LocalDateTime bannedUntil) {
+        this.bannedUntil = bannedUntil;
+    }
+
+    public String getBannedBy() {
+        return bannedBy;
+    }
+
+    public void setBannedBy(String bannedBy) {
+        this.bannedBy = bannedBy;
+    }
+
+    public LocalDateTime getBannedAt() {
+        return bannedAt;
+    }
+
+    public void setBannedAt(LocalDateTime bannedAt) {
+        this.bannedAt = bannedAt;
     }
 
     // UserDetails implementation
